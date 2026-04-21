@@ -7,8 +7,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'GPS Pappi Pizza - Entregas',
-  description: 'Sistema de cálculo de taxas de entrega da Pappi Pizza',
+  title: 'PappiGPS - Sistema de Roteirização',
+  description: 'Sistema de roteirização e gestão de entregas inteligente',
   generator: 'v0.app',
   icons: {
     icon: [
