@@ -112,7 +112,7 @@ export default function EntregasMap({ loja, entregas, onSelectEntrega }: Entrega
         <Marker position={lojaPosition} icon={lojaIcon}>
           <Popup>
             <div className="text-sm">
-              <strong className="text-emerald-600">{loja.nome}</strong>
+              <strong className="text-[var(--success)]">{loja.nome}</strong>
               <p className="text-muted-foreground">{loja.endereco.logradouro}, {loja.endereco.numero}</p>
               <p className="text-xs">Ponto de partida</p>
             </div>
@@ -124,7 +124,7 @@ export default function EntregasMap({ loja, entregas, onSelectEntrega }: Entrega
           <Marker position={currentLocation} icon={motoIcon}>
             <Popup>
               <div className="text-sm">
-                <strong className="text-blue-600">Sua Localização</strong>
+                <strong className="text-[var(--primary)]">Sua Localização</strong>
                 <p className="text-xs text-muted-foreground">Atualizada em tempo real</p>
               </div>
             </Popup>
@@ -143,12 +143,12 @@ export default function EntregasMap({ loja, entregas, onSelectEntrega }: Entrega
           >
             <Popup>
               <div className="text-sm">
-                <strong className="text-red-600">Entrega #{pedido.ordemEntrega}</strong>
+                <strong className="text-[var(--destructive)]">Entrega #{pedido.ordemEntrega}</strong>
                 <p className="font-medium">{pedido.cliente.nome}</p>
                 <p className="text-muted-foreground">
                   {pedido.endereco.logradouro}, {pedido.endereco.numero}
                 </p>
-                <p className="text-emerald-600 font-medium mt-1">
+                <p className="text-[var(--success)] font-medium mt-1">
                   Taxa: {formatCurrency(pedido.taxaEntrega?.valorTotal || 0)}
                 </p>
               </div>
@@ -160,7 +160,7 @@ export default function EntregasMap({ loja, entregas, onSelectEntrega }: Entrega
         {routePoints.length > 1 && (
           <Polyline 
             positions={routePoints}
-            color="#10b981"
+            color="var(--success)"
             weight={3}
             opacity={0.7}
             dashArray="10, 10"

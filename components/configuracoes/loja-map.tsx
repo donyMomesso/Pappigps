@@ -69,8 +69,8 @@ export default function LojaMap({ coordenadas, raioKm, onCoordenadasChange }: Lo
           center={position}
           radius={raioMetros}
           pathOptions={{
-            color: '#10b981',
-            fillColor: '#10b981',
+            color: 'var(--success)',
+            fillColor: 'var(--success)',
             fillOpacity: 0.1,
             weight: 2
           }}

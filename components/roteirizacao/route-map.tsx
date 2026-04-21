@@ -39,7 +39,7 @@ export function RouteMap({ pedidos, selectedPedidos }: RouteMapProps) {
       // Add store marker as origin point
       const storeIcon = L.divIcon({
         className: "store-marker",
-        html: `<div style="width: 40px; height: 40px; border-radius: 50%; background: #dc2626; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">🏪</div>`,
+        html: `<div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">🏪</div>`,
         iconSize: [40, 40],
         iconAnchor: [20, 20],
       })
@@ -53,7 +53,7 @@ export function RouteMap({ pedidos, selectedPedidos }: RouteMapProps) {
         if (pedido.endereco.latitude && pedido.endereco.longitude) {
           const isSelected = selectedPedidos.includes(pedido.id)
 
-          const markerHtml = `<div style="width: 32px; height: 32px; border-radius: 50%; background: ${isSelected ? "#059669" : "#71717a"}; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">${index + 1}</div>`
+const markerHtml = `<div style="width: 32px; height: 32px; border-radius: 50%; background: ${isSelected ? "var(--success)" : "var(--border)"}; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">${index + 1}</div>`
 
           const icon = L.divIcon({
             className: "custom-marker",
@@ -85,9 +85,7 @@ export function RouteMap({ pedidos, selectedPedidos }: RouteMapProps) {
 
         if (routeCoords.length > 1) {
           L.polyline(routeCoords, {
-            color: "#059669",
-            weight: 4,
-            opacity: 0.8,
+              color: "var(--primary)",
           }).addTo(map)
 
           // Fit map to show entire route
@@ -113,7 +111,7 @@ export function RouteMap({ pedidos, selectedPedidos }: RouteMapProps) {
     <div
       ref={mapRef}
       className="w-full h-full min-h-[400px] rounded-lg"
-      style={{ background: "#e5e7eb" }}
+      style={{ background: "var(--background)" }}
     />
   )
 }

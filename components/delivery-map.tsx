@@ -249,22 +249,22 @@ export function DeliveryMap() {
         popupAnchor: [0, -36],
       })
 
-      const taxaAntigaHTML = taxaAntiga ? `<p style="color: #e74c3c; font-weight: bold;">Antiga: ${taxaAntiga}</p>` : ""
+      const taxaAntigaHTML = taxaAntiga ? `<p style="color: var(--destructive); font-weight: bold;">Antiga: ${taxaAntiga}</p>` : ""
 
       const taxaNovaHTML =
         calc.status === "dentro"
-          ? `<span style="color: #27ae60; font-weight: bold; font-size: 18px; background: #eafaf1; padding: 5px; border-radius: 5px; display: inline-block;">Taxa: ${calc.taxa}</span>`
-          : `<span style="color: #fff; font-weight: bold; font-size: 16px; background: #c0392b; padding: 5px; border-radius: 5px; display: inline-block;">Fora de Área (+10km)</span>`
+          ? `<span style="color: var(--success); font-weight: bold; font-size: 18px; background: rgba(22,163,74,0.12); padding: 5px; border-radius: 5px; display: inline-block;">Taxa: ${calc.taxa}</span>`
+          : `<span style="color: #fff; font-weight: bold; font-size: 16px; background: var(--destructive); padding: 5px; border-radius: 5px; display: inline-block;">Fora de Área (+10km)</span>`
 
       const popupContent = `
         <div style="text-align: center; min-width: 180px;">
-          <h3 style="margin: 0 0 8px 0; font-size: 16px; color: #333; border-bottom: 2px solid #eee; padding-bottom: 5px;">${titulo}</h3>
+          <h3 style="margin: 0 0 8px 0; font-size: 16px; color: var(--foreground); border-bottom: 2px solid var(--border); padding-bottom: 5px;">${titulo}</h3>
           <p style="margin: 5px 0; font-size: 14px;">Distância: <b>${calc.km} km</b></p>
           ${taxaAntigaHTML}
           ${taxaNovaHTML}
           <div style="margin-top: 10px; display: flex; gap: 5px; justify-content: center;">
-            <a href="https://waze.com/ul?ll=${lat},${lng}&navigate=yes" target="_blank" style="flex: 1; padding: 6px; border-radius: 5px; text-decoration: none; font-size: 12px; font-weight: bold; color: #000; background: #33ccff; display: flex; align-items: center; justify-content: center;">Waze</a>
-            <a href="https://maps.google.com/?daddr=${lat},${lng}" target="_blank" style="flex: 1; padding: 6px; border-radius: 5px; text-decoration: none; font-size: 12px; font-weight: bold; color: white; background: #ea4335; display: flex; align-items: center; justify-content: center;">Maps</a>
+            <a href="https://waze.com/ul?ll=${lat},${lng}&navigate=yes" target="_blank" style="flex: 1; padding: 6px; border-radius: 5px; text-decoration: none; font-size: 12px; font-weight: bold; color: #fff; background: var(--primary); display: flex; align-items: center; justify-content: center;">Waze</a>
+            <a href="https://maps.google.com/?daddr=${lat},${lng}" target="_blank" style="flex: 1; padding: 6px; border-radius: 5px; text-decoration: none; font-size: 12px; font-weight: bold; color: white; background: var(--destructive); display: flex; align-items: center; justify-content: center;">Maps</a>
           </div>
         </div>
       `
@@ -399,9 +399,9 @@ export function DeliveryMap() {
       <div ref={mapContainerRef} className="h-full w-full" />
 
       {/* Painel de busca */}
-      <div className="absolute top-3 left-1/2 z-[1000] w-[90%] max-w-[400px] -translate-x-1/2 rounded-xl border-t-4 border-t-orange-500 bg-white p-4 shadow-xl">
-        <h2 className="mb-3 text-center text-lg font-bold text-orange-500">
-          GPS <span className="text-blue-600">Pappi</span> <span className="text-orange-500">Pizza</span>
+      <div className="absolute top-3 left-1/2 z-[1000] w-[90%] max-w-[400px] -translate-x-1/2 rounded-xl border-t-4 border-[var(--primary)] bg-white p-4 shadow-xl">
+        <h2 className="mb-3 text-center text-lg font-bold text-[var(--primary)]">
+          GPS <span className="text-[var(--primary)]">Pappi</span> <span className="text-[var(--primary)]">Pizza</span>
         </h2>
 
         {/* Campo de busca */}
@@ -412,7 +412,7 @@ export function DeliveryMap() {
             value={termoBusca}
             onChange={(e) => handleBusca(e.target.value)}
             placeholder="Ex: jd bandeira, sta lucia..."
-            className="relative z-0 w-full rounded-lg border-2 border-gray-200 bg-white py-3 pr-10 pl-10 text-base outline-none transition-colors focus:border-orange-500"
+            className="relative z-0 w-full rounded-lg border-2 border-gray-200 bg-white py-3 pr-10 pl-10 text-base outline-none transition-colors focus:border-[var(--primary)]"
           />
           {termoBusca && (
             <button
@@ -431,7 +431,7 @@ export function DeliveryMap() {
               <li
                 key={i}
                 onClick={() => focarNoBairro(b.bairro, b.taxa)}
-                className="cursor-pointer border-b border-gray-100 px-3 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-500"
+                className="cursor-pointer border-b border-gray-100 px-3 py-3 text-sm text-gray-700 hover:bg-[rgba(249,115,22,0.08)] hover:text-[var(--primary)]"
               >
                 <span className="font-semibold">{b.bairro}</span>
                 {b.apelido && <span className="mt-0.5 block text-xs text-gray-500">(Popular: {b.apelido})</span>}
@@ -440,7 +440,7 @@ export function DeliveryMap() {
             {termoBusca.length >= 2 && (
               <li
                 onClick={buscarSatelite}
-                className="cursor-pointer border-t-2 border-gray-100 bg-orange-50 px-3 py-3 text-sm font-bold text-orange-500"
+                className="cursor-pointer border-t-2 border-[var(--border)] bg-[rgba(249,115,22,0.08)] px-3 py-3 text-sm font-bold text-[var(--primary)]"
               >
                 <Navigation className="mr-1 inline h-4 w-4" />
                 Buscar &quot;{termoBusca}&quot; no mapa...
@@ -453,14 +453,14 @@ export function DeliveryMap() {
         <button
           onClick={obterLocalizacao}
           disabled={carregando}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border-2 border-green-500 bg-green-50 py-2.5 text-sm font-bold text-green-600 transition-colors hover:bg-green-500 hover:text-white active:bg-green-600 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border-2 border-[var(--success)] bg-[var(--success)]/10 py-2.5 text-sm font-bold text-[var(--success)] transition-colors hover:bg-[var(--success)] hover:text-white active:bg-[var(--success)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <MapPin className="h-5 w-5" />
           {carregando ? "Carregando..." : "Onde eu estou agora?"}
         </button>
 
         {/* Status */}
-        {status && <p className="mt-2 text-center text-xs font-bold text-orange-500">{status}</p>}
+        {status && <p className="mt-2 text-center text-xs font-bold text-[var(--primary)]">{status}</p>}
       </div>
     </div>
   )

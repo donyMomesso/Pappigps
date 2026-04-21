@@ -18,36 +18,36 @@ import { SystemMockup } from "@/components/landing/system-mockup"
 
 export function PappiLanding() {
   return (
-    <main className="min-h-screen bg-[#F9FAFB] text-[#111827]">
+    <main className="min-h-screen bg-background text-foreground">
       <section className="relative overflow-hidden">
         <div className="absolute inset-x-0 top-0 h-[620px] bg-[radial-gradient(circle_at_top,_rgba(249,115,22,0.16),_transparent_42%)]" />
         <div className="mx-auto max-w-7xl px-6 py-6 lg:px-8">
           <header className="rounded-full border border-white/70 bg-white/85 px-5 py-4 shadow-sm backdrop-blur">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#111827] text-lg font-semibold text-white">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-foreground text-lg font-semibold text-background">
                   P
                 </div>
                 <div>
-                  <p className="text-lg font-semibold tracking-tight text-[#111827]">Pappi</p>
-                  <p className="text-sm text-[#6B7280]">Gestão inteligente para operação real</p>
+                  <p className="text-lg font-semibold tracking-tight text-foreground">Pappi</p>
+                  <p className="text-sm text-muted-foreground">Gestão inteligente para operação real</p>
                 </div>
               </div>
-              <nav className="flex flex-wrap items-center gap-3 text-sm text-[#4B5563]">
-                <Link className="transition hover:text-[#111827]" href="#beneficios">
+              <nav className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                <Link className="transition hover:text-foreground" href="#beneficios">
                   Benefícios
                 </Link>
-                <Link className="transition hover:text-[#111827]" href="#funcionalidades">
+                <Link className="transition hover:text-foreground" href="#funcionalidades">
                   Funcionalidades
                 </Link>
-                <Link className="transition hover:text-[#111827]" href="#inteligencia">
+                <Link className="transition hover:text-foreground" href="#inteligencia">
                   Inteligência
                 </Link>
-                <Link className="transition hover:text-[#111827]" href="#demonstracao">
+                <Link className="transition hover:text-foreground" href="#demonstracao">
                   Demonstração
                 </Link>
                 <Link
-                  className="inline-flex items-center justify-center rounded-full border border-[#E5E7EB] px-4 py-2 font-medium text-[#111827] transition hover:border-[#F97316] hover:text-[#F97316]"
+                  className="inline-flex items-center justify-center rounded-full border border-border px-4 py-2 font-medium text-foreground transition hover:border-primary hover:text-primary"
                   href="/login"
                 >
                   Entrar
@@ -58,13 +58,13 @@ export function PappiLanding() {
 
           <div className="grid items-center gap-14 py-16 lg:grid-cols-[1.02fr_0.98fr] lg:py-24">
             <div className="max-w-2xl motion-safe:animate-[fade-up_0.8s_ease-out]">
-              <span className="inline-flex items-center rounded-full border border-[#FED7AA] bg-white px-4 py-1.5 text-sm font-medium text-[#C2410C] shadow-sm">
+              <span className="inline-flex items-center rounded-full border border-primary/20 bg-background px-4 py-1.5 text-sm font-medium text-primary shadow-sm">
                 Plataforma de gestão para delivery, food service e operação comercial
               </span>
-              <h1 className="mt-6 text-4xl font-semibold tracking-tight text-[#111827] md:text-6xl md:leading-[1.02]">
+              <h1 className="mt-6 text-4xl font-semibold tracking-tight text-foreground md:text-6xl md:leading-[1.02]">
                 O sistema que pensa a operação com você.
               </h1>
-              <p className="mt-6 max-w-xl text-lg leading-8 text-[#374151]">
+              <p className="mt-6 max-w-xl text-lg leading-8 text-muted-foreground">
                 O Pappi centraliza pedidos, estoque, financeiro, dashboards e automações em uma
                 plataforma clara, prática e preparada para o ritmo de quem precisa operar bem todos
                 os dias.
@@ -72,14 +72,14 @@ export function PappiLanding() {
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
-                  className="inline-flex items-center justify-center rounded-full bg-[#F97316] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_35px_-20px_rgba(249,115,22,0.95)] transition hover:bg-[#EA580C]"
+                  className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-[0_18px_35px_-20px_rgba(249,115,22,0.95)] transition hover:bg-primary/90"
                   href="/login"
                 >
                   Pedir demonstração
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
                 <Link
-                  className="inline-flex items-center justify-center rounded-full border border-[#E5E7EB] bg-white px-6 py-3.5 text-sm font-semibold text-[#111827] transition hover:border-[#F97316] hover:text-[#F97316]"
+                  className="inline-flex items-center justify-center rounded-full border border-border bg-background px-6 py-3.5 text-sm font-semibold text-foreground transition hover:border-primary hover:text-primary"
                   href="#demonstracao"
                 >
                   Conhecer a plataforma
@@ -94,10 +94,10 @@ export function PappiLanding() {
                 ].map(([title, text]) => (
                   <div
                     key={title}
-                    className="rounded-2xl border border-[#E5E7EB] bg-white/90 p-4 shadow-sm transition-transform duration-300 hover:-translate-y-1"
+                    className="rounded-2xl border border-border bg-background/90 p-4 shadow-sm transition-transform duration-300 hover:-translate-y-1"
                   >
-                    <p className="text-sm font-semibold text-[#111827]">{title}</p>
-                    <p className="mt-2 text-sm leading-6 text-[#6B7280]">{text}</p>
+                    <p className="text-sm font-semibold text-foreground">{title}</p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{text}</p>
                   </div>
                 ))}
               </div>
@@ -122,13 +122,13 @@ export function PappiLanding() {
               return (
                 <div
                   key={benefit.title}
-                  className="rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+                  className="rounded-[28px] border border-border bg-background p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FFF7ED] text-[#F97316]">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                     <Icon className="h-6 w-6" />
                   </div>
-                  <h3 className="mt-5 text-lg font-semibold text-[#111827]">{benefit.title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-[#4B5563]">{benefit.description}</p>
+                  <h3 className="mt-5 text-lg font-semibold text-foreground">{benefit.title}</h3>
+                  <p className="mt-3 text-sm leading-7 text-muted-foreground">{benefit.description}</p>
                 </div>
               )
             })}
@@ -138,7 +138,7 @@ export function PappiLanding() {
 
       <SocialProof />
 
-      <section id="funcionalidades" className="border-y border-[#E5E7EB] bg-white py-24">
+      <section id="funcionalidades" className="border-y border-border bg-background py-24">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <SectionHeading
             eyebrow="Funcionalidades"
@@ -152,13 +152,13 @@ export function PappiLanding() {
               return (
                 <div
                   key={feature.title}
-                  className="rounded-[28px] border border-[#E5E7EB] bg-[#FCFCFD] p-6 transition duration-300 hover:-translate-y-1 hover:shadow-md"
+                  className="rounded-[28px] border border-border bg-muted p-6 transition duration-300 hover:-translate-y-1 hover:shadow-md"
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#111827] text-white">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-foreground text-background">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <h3 className="mt-5 text-lg font-semibold text-[#111827]">{feature.title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-[#4B5563]">{feature.description}</p>
+                  <h3 className="mt-5 text-lg font-semibold text-foreground">{feature.title}</h3>
+                  <p className="mt-3 text-sm leading-7 text-muted-foreground">{feature.description}</p>
                 </div>
               )
             })}
@@ -170,13 +170,13 @@ export function PappiLanding() {
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="grid gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
             <div>
-              <span className="inline-flex items-center rounded-full border border-[#FED7AA] bg-white px-4 py-1 text-sm font-medium text-[#C2410C] shadow-sm">
+              <span className="inline-flex items-center rounded-full border border-primary/20 bg-background px-4 py-1 text-sm font-medium text-primary shadow-sm">
                 Visual do sistema
               </span>
-              <h2 className="mt-5 text-3xl font-semibold tracking-tight text-[#111827] md:text-4xl">
+              <h2 className="mt-5 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
                 Um painel com cara de produto real e foco no que move a operação.
               </h2>
-              <p className="mt-5 text-base leading-8 text-[#374151] md:text-lg">
+              <p className="mt-5 text-base leading-8 text-muted-foreground md:text-lg">
                 Em vez de esconder a rotina em menus confusos, o Pappi prioriza visão prática:
                 vendas do dia, pedidos em andamento, estoque crítico, fluxo financeiro, alertas e
                 métricas que ajudam a agir rápido.
@@ -188,8 +188,8 @@ export function PappiLanding() {
                   "Estrutura pronta para conectar automações e inteligência operacional.",
                 ].map((item) => (
                   <div key={item} className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 text-[#16A34A]" />
-                    <p className="text-sm leading-7 text-[#4B5563] md:text-base">{item}</p>
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" />
+                    <p className="text-sm leading-7 text-muted-foreground md:text-base">{item}</p>
                   </div>
                 ))}
               </div>
@@ -199,11 +199,11 @@ export function PappiLanding() {
         </div>
       </section>
 
-      <section id="inteligencia" className="border-y border-[#E5E7EB] bg-white py-24">
+      <section id="inteligencia" className="border-y border-border bg-background py-24">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-            <div className="rounded-[32px] bg-[#111827] p-8 text-white shadow-[0_35px_70px_-40px_rgba(17,24,39,0.8)] md:p-10">
-              <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-1 text-sm font-medium text-[#FDBA74]">
+            <div className="rounded-[32px] bg-foreground p-8 text-background shadow-[0_35px_70px_-40px_rgba(17,24,39,0.8)] md:p-10">
+              <span className="inline-flex items-center rounded-full border border-background/10 bg-background/5 px-4 py-1 text-sm font-medium text-primary">
                 IA e automações
               </span>
               <h2 className="mt-5 text-3xl font-semibold tracking-tight md:text-4xl">
@@ -220,9 +220,9 @@ export function PappiLanding() {
                   ["Sugestões úteis", "Ações simples com impacto real na margem e no fluxo."],
                   ["Mais previsibilidade", "Antecipe gargalos e picos com contexto operacional."],
                 ].map(([title, text]) => (
-                  <div key={title} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <p className="font-medium">{title}</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-300">{text}</p>
+                  <div className="rounded-2xl border border-background/10 bg-background/5 p-4">
+                    <p className="font-medium text-foreground">{title}</p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{text}</p>
                   </div>
                 ))}
               </div>
@@ -232,13 +232,13 @@ export function PappiLanding() {
               {automationPoints.map((point) => (
                 <div
                   key={point}
-                  className="rounded-[28px] border border-[#E5E7EB] bg-[#F9FAFB] p-6"
+                  className="rounded-[28px] border border-border bg-background p-6"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#FFF7ED] text-[#F97316]">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                       <Sparkles className="h-5 w-5" />
                     </div>
-                    <p className="text-sm leading-7 text-[#374151] md:text-base">{point}</p>
+                    <p className="text-sm leading-7 text-muted-foreground md:text-base">{point}</p>
                   </div>
                 </div>
               ))}
@@ -255,23 +255,23 @@ export function PappiLanding() {
             description="O Pappi combina estrutura de software premium com linguagem de operação. A ideia é dar poder de gestão, sem criar atrito desnecessário no uso."
           />
           <div className="mt-14 grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="rounded-[32px] border border-[#E5E7EB] bg-white p-8">
+            <div className="rounded-[32px] border border-border bg-background p-8">
               <div className="grid gap-4 md:grid-cols-2">
                 {differentiators.map((item) => (
-                  <div key={item} className="rounded-2xl bg-[#F9FAFB] p-5">
-                    <p className="text-sm leading-7 text-[#374151]">{item}</p>
+                  <div key={item} className="rounded-2xl bg-background p-5">
+                    <p className="text-sm leading-7 text-muted-foreground">{item}</p>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="rounded-[32px] bg-[#FFF7ED] p-8">
-              <p className="text-sm font-medium uppercase tracking-[0.18em] text-[#C2410C]">
+            <div className="rounded-[32px] bg-primary/10 p-8">
+              <p className="text-sm font-medium uppercase tracking-[0.18em] text-primary">
                 Por que o Pappi?
               </p>
-              <h3 className="mt-4 text-3xl font-semibold tracking-tight text-[#111827]">
+              <h3 className="mt-4 text-3xl font-semibold tracking-tight text-foreground">
                 Porque crescer sem controle custa caro.
               </h3>
-              <p className="mt-5 text-base leading-8 text-[#374151]">
+              <p className="mt-5 text-base leading-8 text-muted-foreground">
                 O Pappi foi pensado para ser próximo da rotina de quem vende, atende, produz,
                 entrega e fecha caixa. Ele organiza a casa, traz visibilidade e prepara a operação
                 para crescer com mais confiança.
@@ -283,8 +283,8 @@ export function PappiLanding() {
                   "Experiência clara para time operacional e liderança.",
                 ].map((item) => (
                   <div key={item} className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 text-[#F97316]" />
-                    <p className="text-sm leading-7 text-[#374151]">{item}</p>
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 text-primary" />
+                    <p className="text-sm leading-7 text-muted-foreground">{item}</p>
                   </div>
                 ))}
               </div>
@@ -295,29 +295,29 @@ export function PappiLanding() {
 
       <section className="pb-24">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="rounded-[36px] bg-[#111827] px-8 py-12 text-white shadow-[0_35px_70px_-45px_rgba(17,24,39,0.8)] md:px-12 md:py-14">
+          <div className="rounded-[36px] bg-foreground px-8 py-12 text-background shadow-[0_35px_70px_-45px_rgba(17,24,39,0.8)] md:px-12 md:py-14">
             <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
               <div className="max-w-2xl">
-                <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-1 text-sm font-medium text-[#FDBA74]">
+                <span className="inline-flex items-center rounded-full border border-background/10 bg-background/5 px-4 py-1 text-sm font-medium text-primary">
                   CTA final
                 </span>
-                <h2 className="mt-5 text-3xl font-semibold tracking-tight md:text-4xl">
+                <h2 className="mt-5 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
                   Conheça o Pappi e veja como a operação pode ganhar ritmo com mais controle.
                 </h2>
-                <p className="mt-5 text-base leading-8 text-slate-300 md:text-lg">
+                <p className="mt-5 text-base leading-8 text-muted-foreground md:text-lg">
                   Uma plataforma pensada para transformar rotina operacional em gestão clara,
                   automação útil e crescimento sustentável.
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
                 <Link
-                  className="inline-flex items-center justify-center rounded-full bg-[#F97316] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#EA580C]"
+                  className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
                   href="/login"
                 >
                   Testar plataforma
                 </Link>
                 <Link
-                  className="inline-flex items-center justify-center rounded-full border border-white/15 px-6 py-3.5 text-sm font-semibold text-white transition hover:border-[#FDBA74] hover:text-[#FDBA74]"
+                  className="inline-flex items-center justify-center rounded-full border border-background/15 px-6 py-3.5 text-sm font-semibold text-background transition hover:border-primary hover:text-primary"
                   href="#beneficios"
                 >
                   Revisar benefícios
@@ -330,33 +330,33 @@ export function PappiLanding() {
 
       <LandingFaq />
 
-      <footer className="border-t border-[#E5E7EB] bg-white">
+      <footer className="border-t border-border bg-background">
         <div className="mx-auto grid max-w-7xl gap-10 px-6 py-12 lg:grid-cols-[1.15fr_0.85fr_0.85fr] lg:px-8">
           <div>
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#111827] text-lg font-semibold text-white">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-foreground text-lg font-semibold text-background">
                 P
               </div>
               <div>
-                <p className="text-lg font-semibold tracking-tight text-[#111827]">Pappi</p>
-                <p className="text-sm text-[#6B7280]">Software para operação que precisa acontecer.</p>
+                <p className="text-lg font-semibold tracking-tight text-foreground">Pappi</p>
+                <p className="text-sm text-muted-foreground">Software para operação que precisa acontecer.</p>
               </div>
             </div>
-            <p className="mt-5 max-w-md text-sm leading-7 text-[#4B5563]">
+            <p className="mt-5 max-w-md text-sm leading-7 text-muted-foreground">
               Plataforma de gestão inteligente para delivery, food service e operações comerciais
               que querem mais clareza, automação e controle no dia a dia.
             </p>
           </div>
 
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#111827]">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-foreground">
               Navegação
             </p>
             <div className="mt-4 space-y-3">
               {footerLinks.map((link) => (
                 <Link
                   key={link.label}
-                  className="block text-sm text-[#4B5563] transition hover:text-[#F97316]"
+                  className="block text-sm text-muted-foreground transition hover:text-primary"
                   href={link.href}
                 >
                   {link.label}
@@ -366,17 +366,17 @@ export function PappiLanding() {
           </div>
 
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#111827]">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-foreground">
               Contato
             </p>
-            <div className="mt-4 space-y-3 text-sm text-[#4B5563]">
+            <div className="mt-4 space-y-3 text-sm text-muted-foreground">
               <p>comercial@pappi.com.br</p>
               <p>(11) 4000-2211</p>
               <p>Av. Paulista, 1471, Sao Paulo - SP</p>
             </div>
           </div>
         </div>
-        <div className="border-t border-[#E5E7EB] px-6 py-5 text-center text-sm text-[#6B7280]">
+        <div className="border-t border-border px-6 py-5 text-center text-sm text-muted-foreground">
           © 2026 Pappi. Todos os direitos reservados.
         </div>
       </footer>

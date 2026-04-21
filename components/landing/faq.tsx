@@ -23,16 +23,16 @@ const faqs = [
 
 export function LandingFaq() {
   return (
-    <section className="border-y border-[#E5E7EB] bg-white py-24">
+    <section className="border-y border-border bg-background py-24">
       <div className="mx-auto max-w-5xl px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
-          <span className="inline-flex items-center rounded-full border border-[#FED7AA] bg-white px-4 py-1 text-sm font-medium text-[#C2410C] shadow-sm">
+          <span className="inline-flex items-center rounded-full border border-primary/20 bg-background px-4 py-1 text-sm font-medium text-primary shadow-sm">
             FAQ
           </span>
-          <h2 className="mt-5 text-3xl font-semibold tracking-tight text-[#111827] md:text-4xl">
+          <h2 className="mt-5 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
             Perguntas que normalmente aparecem antes da decisão.
           </h2>
-          <p className="mt-4 text-base leading-7 text-[#374151] md:text-lg">
+          <p className="mt-4 text-base leading-7 text-muted-foreground md:text-lg">
             Respostas objetivas para quem quer entender se o Pappi faz sentido para a operação.
           </p>
         </div>
@@ -41,10 +41,10 @@ export function LandingFaq() {
           {faqs.map((item) => (
             <div
               key={item.question}
-              className="rounded-[28px] border border-[#E5E7EB] bg-[#FCFCFD] p-6 shadow-sm"
+              className="rounded-[28px] border border-border bg-muted p-6 shadow-sm"
             >
-              <h3 className="text-lg font-semibold text-[#111827]">{item.question}</h3>
-              <p className="mt-3 text-sm leading-7 text-[#4B5563] md:text-base">{item.answer}</p>
+              <h3 className="text-lg font-semibold text-foreground">{item.question}</h3>
+              <p className="mt-3 text-sm leading-7 text-muted-foreground md:text-base">{item.answer}</p>
             </div>
           ))}
         </div>
