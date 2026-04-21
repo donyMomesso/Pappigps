@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import useSWR from 'swr'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -23,7 +24,6 @@ import {
   Shield,
   CheckCircle2
 } from 'lucide-react'
-import { mockEntregadores, TERMO_FREELANCER } from '@/mocks/data'
 import type { Entregador } from '@/types'
 
 const veiculoLabels: Record<string, string> = {
@@ -35,42 +35,48 @@ const veiculoLabels: Record<string, string> = {
 }
 
 export default function PerfilPage() {
-  const [entregador, setEntregador] = useState<Entregador | null>(null)
-  const [editMode, setEditMode] = useState(false)
-  const [formData, setFormData] = useState({
-    telefone: '',
-    email: '',
-    chavePix: '',
-    banco: '',
-    agencia: '',
-    conta: ''
-  })
-
-  useEffect(() => {
-    const entregadorId = localStorage.getItem('entregadorId')
-    if (entregadorId) {
-      const found = mockEntregadores.find(e => e.id === entregadorId)
-      if (found) {
-        setEntregador(found)
-        setFormData({
-          telefone: found.telefone,
-          email: found.email || '',
-          chavePix: found.chavePix || '',
-          banco: found.banco || '',
-          agencia: found.agencia || '',
-          conta: found.conta || ''
-        })
-      }
+  const fetcher = async (url: string) => {
+    const response = await fetch(url, { cache: 'no-store' })
+    if (!response.ok) {
+      throw new Error('Falha ao carregar perfil')
     }
-  }, [])
-
-  const handleSave = () => {
-    // Simular salvamento
-    setEditMode(false)
+    return response.json()
   }
+  const { data, mutate } = useSWR('/api/entregador/me', fetcher)
+  const entregador: Entregador | null = data?.entregador ?? null
 
   if (!entregador) {
     return <div className="p-6">Carregando...</div>
+  }
+
+  return <PerfilEditor entregador={entregador} onSaved={() => void mutate()} />
+}
+
+function PerfilEditor({
+  entregador,
+  onSaved,
+}: {
+  entregador: Entregador
+  onSaved: () => void
+}) {
+  const [editMode, setEditMode] = useState(false)
+  const [formData, setFormData] = useState({
+    telefone: entregador.telefone,
+    email: entregador.email || '',
+    chavePix: entregador.chavePix || '',
+    banco: entregador.banco || '',
+    agencia: entregador.agencia || '',
+    conta: entregador.conta || ''
+  })
+
+  const handleSave = async () => {
+    await fetch('/api/entregador/me/perfil', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    })
+    onSaved()
+    setEditMode(false)
   }
 
   return (

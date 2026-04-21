@@ -1,34 +1,22 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Navigation, Clock } from "lucide-react"
-import { mockEntregadores } from "@/mocks/data"
 import type { Entregador } from "@/types"
 
+const fetcher = async (url: string) => {
+  const response = await fetch(url, { cache: "no-store" })
+  if (!response.ok) {
+    throw new Error("Falha ao carregar entregadores")
+  }
+  return response.json()
+}
+
 export function DelivererTracking() {
-  const [entregadoresOnline, setEntregadoresOnline] = useState<Entregador[]>([])
-
-  useEffect(() => {
-    // Filtrar entregadores online/disponíveis
-    const online = mockEntregadores.filter(e => e.status !== 'offline')
-    setEntregadoresOnline(online)
-
-    // Simular atualização de localizações (em produção, seria via WebSocket ou polling)
-    const interval = setInterval(() => {
-      online.forEach(entregador => {
-        const localStorageKey = `localizacao_${entregador.id}`
-        const localizacaoStr = localStorage.getItem(localStorageKey)
-        if (localizacaoStr) {
-          const localizacao = JSON.parse(localizacaoStr)
-          // Atualizar mock ou estado se necessário
-        }
-      })
-    }, 30000) // Atualizar a cada 30 segundos
-
-    return () => clearInterval(interval)
-  }, [])
+  const { data } = useSWR("/api/entregadores", fetcher, { refreshInterval: 30000 })
+  const entregadoresOnline: Entregador[] = (data ?? []).filter((entregador: Entregador) => entregador.status !== "offline")
 
   return (
     <Card>
@@ -49,9 +37,7 @@ export function DelivererTracking() {
             </p>
           ) : (
             entregadoresOnline.map((entregador) => {
-              const localStorageKey = `localizacao_${entregador.id}`
-              const localizacaoStr = localStorage.getItem(localStorageKey)
-              const localizacao = localizacaoStr ? JSON.parse(localizacaoStr) : null
+              const localizacao = entregador.localizacaoAtual
 
               return (
                 <div key={entregador.id} className="flex items-center justify-between p-3 border rounded-lg">

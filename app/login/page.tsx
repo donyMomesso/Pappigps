@@ -22,13 +22,23 @@ export default function LoginPage() {
     setError("")
     setIsLoading(true)
 
-    // Simulate authentication
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      })
 
-    if (email === "admin@pappigps.com" && password === "123456") {
+      if (!response.ok) {
+        const data = await response.json()
+        setError(data.error || "E-mail ou senha inválidos")
+        setIsLoading(false)
+        return
+      }
+
       router.push("/dashboard")
-    } else {
-      setError("E-mail ou senha inválidos")
+    } catch {
+      setError("Não foi possível autenticar agora")
       setIsLoading(false)
     }
   }

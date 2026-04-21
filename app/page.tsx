@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation"
+import { PappiLanding } from "@/components/landing/pappi-landing"
 
-export default function Home() {
-  redirect("/login")
+export default function Page() {
+  return <PappiLanding />
 }

@@ -68,7 +68,32 @@ export default function RoteirizacaoPage() {
   }
 
   const handleCreateRoute = () => {
-    alert(`Rota criada com ${selectedPedidos.length} pedidos para o entregador ${selectedEntregador}`)
+    if (!selectedEntregador || selectedPedidos.length === 0) {
+      return
+    }
+
+    void fetch("/api/rotas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pedidoIds: selectedPedidos,
+        entregadorId: selectedEntregador,
+        nome: `Rota ${new Date().toLocaleDateString("pt-BR")}`
+      })
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Falha ao criar rota")
+        }
+
+        setSelectedPedidos([])
+        setSelectedEntregador(null)
+        setPedidos([])
+        alert("Rota criada com sucesso.")
+      })
+      .catch(() => {
+        alert("Não foi possível criar a rota.")
+      })
   }
 
   return (

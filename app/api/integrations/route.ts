@@ -1,32 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getIntegrations, saveIntegrations } from '@/lib/server/repositories'
 import type { IntegracaoPlataforma } from '@/types'
-
-// Mock de integrações (em produção, seria banco de dados)
-let integracoes: IntegracaoPlataforma[] = [
-  {
-    id: 'ifood_001',
-    nome: 'iFood',
-    plataforma: 'ifood',
-    ativo: false,
-    storeId: '',
-    apiKey: '',
-    webhookUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/webhooks/ifood`,
-    status: 'desconectado'
-  },
-  {
-    id: '99food_001',
-    nome: '99Food',
-    plataforma: '99food',
-    ativo: false,
-    storeId: '',
-    apiKey: '',
-    webhookUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/webhooks/99food`,
-    status: 'desconectado'
-  }
-]
 
 // GET - Listar integrações
 export async function GET() {
+  const integracoes = await getIntegrations()
   return NextResponse.json(integracoes)
 }
 
@@ -35,6 +13,7 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
     const { id, storeId, apiKey, ativo } = data
+    const integracoes = await getIntegrations()
 
     const integracao = integracoes.find(i => i.id === id)
     if (!integracao) {
@@ -57,6 +36,8 @@ export async function POST(request: NextRequest) {
       integracao.status = 'desconectado'
     }
 
+    await saveIntegrations(integracoes)
+
     return NextResponse.json(integracao)
 
   } catch (error) {
@@ -73,6 +54,7 @@ export async function PUT(request: NextRequest) {
   try {
     const data = await request.json()
     const { id } = data
+    const integracoes = await getIntegrations()
 
     const integracao = integracoes.find(i => i.id === id)
     if (!integracao) {
@@ -87,6 +69,7 @@ export async function PUT(request: NextRequest) {
 
     integracao.status = testSuccess ? 'conectado' : 'erro'
     integracao.ultimaSincronizacao = testSuccess ? new Date() : undefined
+    await saveIntegrations(integracoes)
 
     return NextResponse.json({
       success: testSuccess,

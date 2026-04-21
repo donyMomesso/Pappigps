@@ -1,15 +1,23 @@
 "use client"
 
 import { useState } from "react"
+import useSWR from "swr"
 import { Header } from "@/components/layout/header"
 import { EntregadoresGrid } from "@/components/entregadores/entregadores-grid"
 import { NovoEntregadorModal } from "@/components/entregadores/novo-entregador-modal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Plus, Search } from "lucide-react"
-import { mockEntregadores } from "@/mocks/data"
-import type { StatusEntregador } from "@/types"
+import type { Entregador, StatusEntregador } from "@/types"
 import { cn } from "@/lib/utils"
+
+const fetcher = async (url: string) => {
+  const response = await fetch(url, { cache: "no-store" })
+  if (!response.ok) {
+    throw new Error("Falha ao carregar entregadores")
+  }
+  return response.json()
+}
 
 const statusOptions: { value: StatusEntregador | "todos"; label: string }[] = [
   { value: "todos", label: "Todos" },
@@ -22,8 +30,10 @@ export default function EntregadoresPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [statusFilter, setStatusFilter] = useState<StatusEntregador | "todos">("todos")
   const [searchTerm, setSearchTerm] = useState("")
+  const { data, mutate } = useSWR("/api/entregadores", fetcher)
+  const entregadores: Entregador[] = data ?? []
 
-  const filteredEntregadores = mockEntregadores.filter(entregador => {
+  const filteredEntregadores = entregadores.filter(entregador => {
     const matchesStatus = statusFilter === "todos" || entregador.status === statusFilter
     const matchesSearch = searchTerm === "" || 
       entregador.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -38,7 +48,7 @@ export default function EntregadoresPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <h2 className="text-lg font-semibold text-zinc-900">Gerenciar Entregadores</h2>
-            <p className="text-sm text-zinc-500">{mockEntregadores.length} entregadores cadastrados</p>
+            <p className="text-sm text-zinc-500">{entregadores.length} entregadores cadastrados</p>
           </div>
           <Button 
             onClick={() => setIsModalOpen(true)}
@@ -87,6 +97,7 @@ export default function EntregadoresPage() {
         <NovoEntregadorModal 
           open={isModalOpen} 
           onOpenChange={setIsModalOpen}
+          onCreated={() => void mutate()}
         />
       </div>
     </>

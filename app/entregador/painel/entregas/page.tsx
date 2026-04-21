@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import useSWR from 'swr'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -16,9 +17,8 @@ import {
   DollarSign,
   User
 } from 'lucide-react'
-import { mockPedidos, mockLoja } from '@/mocks/data'
 import { formatCurrency } from '@/lib/utils'
-import type { Pedido } from '@/types'
+import type { Loja, Pedido } from '@/types'
 import dynamic from 'next/dynamic'
 
 const EntregasMap = dynamic(() => import('@/components/entregador/entregas-map'), {
@@ -27,28 +27,24 @@ const EntregasMap = dynamic(() => import('@/components/entregador/entregas-map')
 })
 
 export default function EntregasPage() {
-  const [entregasAtivas, setEntregasAtivas] = useState<Pedido[]>([])
-  const [entregasConcluidas, setEntregasConcluidas] = useState<Pedido[]>([])
   const [selectedEntrega, setSelectedEntrega] = useState<Pedido | null>(null)
-
-  useEffect(() => {
-    const entregadorId = localStorage.getItem('entregadorId')
-    if (entregadorId) {
-      setEntregasAtivas(mockPedidos.filter(
-        p => p.entregadorId === entregadorId && p.status === 'em_rota'
-      ))
-      setEntregasConcluidas(mockPedidos.filter(
-        p => p.entregadorId === entregadorId && p.status === 'entregue'
-      ))
+  const fetcher = async (url: string) => {
+    const response = await fetch(url, { cache: 'no-store' })
+    if (!response.ok) {
+      throw new Error('Falha ao carregar entregas')
     }
-  }, [])
+    return response.json()
+  }
+  const { data, mutate } = useSWR('/api/entregador/me/entregas', fetcher)
+  const entregasAtivas: Pedido[] = data?.ativas ?? []
+  const entregasConcluidas: Pedido[] = data?.concluidas ?? []
+  const loja: Loja | null = data?.loja ?? null
 
-  const handleConfirmarEntrega = (pedidoId: string) => {
-    setEntregasAtivas(prev => prev.filter(p => p.id !== pedidoId))
-    const pedido = entregasAtivas.find(p => p.id === pedidoId)
-    if (pedido) {
-      setEntregasConcluidas(prev => [...prev, { ...pedido, status: 'entregue' as const }])
-    }
+  const handleConfirmarEntrega = async (pedidoId: string) => {
+    await fetch(`/api/entregador/me/entregas/${pedidoId}`, {
+      method: 'PATCH',
+    })
+    await mutate()
   }
 
   const openNavigation = (endereco: Pedido['endereco']) => {
@@ -78,7 +74,28 @@ export default function EntregasPage() {
         </CardHeader>
         <CardContent>
           <EntregasMap 
-            loja={mockLoja}
+            loja={loja || {
+              id: 'fallback',
+              nome: 'Loja',
+              cnpj: '',
+              telefone: '',
+              email: '',
+              endereco: { logradouro: '', numero: '', bairro: '', cidade: '', uf: '', cep: '' },
+              coordenadas: { latitude: 0, longitude: 0 },
+              horarioOperacao: {
+                domingo: { abertura: '00:00', fechamento: '00:00', ativo: false },
+                segunda: { abertura: '00:00', fechamento: '00:00', ativo: false },
+                terca: { abertura: '00:00', fechamento: '00:00', ativo: false },
+                quarta: { abertura: '00:00', fechamento: '00:00', ativo: false },
+                quinta: { abertura: '00:00', fechamento: '00:00', ativo: false },
+                sexta: { abertura: '00:00', fechamento: '00:00', ativo: false },
+                sabado: { abertura: '00:00', fechamento: '00:00', ativo: false }
+              },
+              raioEntregaKm: 0,
+              taxaEntregaBase: 0,
+              taxaPorKm: 0,
+              diariaEntregador: 0
+            }}
             entregas={entregasAtivas}
             onSelectEntrega={setSelectedEntrega}
           />

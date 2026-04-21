@@ -22,19 +22,48 @@ import { Loader2 } from "lucide-react"
 interface NovoEntregadorModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onCreated?: () => void
 }
 
-export function NovoEntregadorModal({ open, onOpenChange }: NovoEntregadorModalProps) {
+export function NovoEntregadorModal({ open, onOpenChange, onCreated }: NovoEntregadorModalProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    nome: "",
+    telefone: "",
+    cpf: "",
+    email: "",
+    veiculo: "moto",
+    placaVeiculo: ""
+  })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    setIsLoading(false)
-    onOpenChange(false)
+
+    try {
+      const response = await fetch("/api/entregadores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      })
+
+      if (!response.ok) {
+        throw new Error("Falha ao cadastrar entregador")
+      }
+
+      setFormData({
+        nome: "",
+        telefone: "",
+        cpf: "",
+        email: "",
+        veiculo: "moto",
+        placaVeiculo: ""
+      })
+      onOpenChange(false)
+      onCreated?.()
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -48,29 +77,29 @@ export function NovoEntregadorModal({ open, onOpenChange }: NovoEntregadorModalP
           <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
               <Label htmlFor="nome">Nome completo</Label>
-              <Input id="nome" placeholder="Nome do entregador" required />
+              <Input id="nome" placeholder="Nome do entregador" required value={formData.nome} onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="telefone">Telefone</Label>
-                <Input id="telefone" placeholder="(00) 00000-0000" required />
+                <Input id="telefone" placeholder="(00) 00000-0000" required value={formData.telefone} onChange={(e) => setFormData(prev => ({ ...prev, telefone: e.target.value }))} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="cpf">CPF</Label>
-                <Input id="cpf" placeholder="000.000.000-00" required />
+                <Input id="cpf" placeholder="000.000.000-00" required value={formData.cpf} onChange={(e) => setFormData(prev => ({ ...prev, cpf: e.target.value }))} />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">E-mail (opcional)</Label>
-              <Input id="email" type="email" placeholder="email@exemplo.com" />
+              <Input id="email" type="email" placeholder="email@exemplo.com" value={formData.email} onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="veiculo">Tipo de Veículo</Label>
-                <Select required>
+                <Select required value={formData.veiculo} onValueChange={(value) => setFormData(prev => ({ ...prev, veiculo: value }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
@@ -79,12 +108,13 @@ export function NovoEntregadorModal({ open, onOpenChange }: NovoEntregadorModalP
                     <SelectItem value="carro">Carro</SelectItem>
                     <SelectItem value="van">Van</SelectItem>
                     <SelectItem value="caminhao">Caminhão</SelectItem>
+                    <SelectItem value="bicicleta">Bicicleta</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="placa">Placa do Veículo</Label>
-                <Input id="placa" placeholder="ABC-1234" />
+                <Input id="placa" placeholder="ABC-1234" value={formData.placaVeiculo} onChange={(e) => setFormData(prev => ({ ...prev, placaVeiculo: e.target.value }))} />
               </div>
             </div>
           </div>

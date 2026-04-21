@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
@@ -31,27 +32,29 @@ export default function EntregadorPainelLayout({
 }) {
   const router = useRouter()
   const pathname = usePathname()
-  const [entregadorNome, setEntregadorNome] = useState('')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [locationEnabled, setLocationEnabled] = useState(false)
+  const fetcher = async (url: string) => {
+    const response = await fetch(url, { cache: 'no-store' })
+    if (!response.ok) {
+      throw new Error('Falha ao carregar entregador')
+    }
+    return response.json()
+  }
+  const { data } = useSWR('/api/entregador/me', fetcher)
+  const entregadorNome = data?.entregador?.nome || ''
 
   useEffect(() => {
-    const nome = localStorage.getItem('entregadorNome')
-    const termoAceito = localStorage.getItem('termoAceito')
-    
-    if (!nome || termoAceito !== 'true') {
-      router.push('/entregador')
-      return
+    if (data && !data.entregador?.termoAceito) {
+      router.push('/entregador/termo')
     }
-    
-    setEntregadorNome(nome)
-  }, [router])
+  }, [data, router])
 
   const handleLogout = () => {
-    localStorage.removeItem('entregadorId')
-    localStorage.removeItem('entregadorNome')
-    localStorage.removeItem('termoAceito')
-    router.push('/entregador')
+    void fetch('/api/auth/logout', { method: 'POST' }).finally(() => {
+      router.push('/entregador')
+      router.refresh()
+    })
   }
 
   const toggleLocation = () => {

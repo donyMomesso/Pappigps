@@ -7,8 +7,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { MapPin, Bike, AlertCircle } from 'lucide-react'
-import { mockEntregadores } from '@/mocks/data'
-
 export default function EntregadorLoginPage() {
   const router = useRouter()
   const [cpf, setCpf] = useState('')
@@ -38,29 +36,29 @@ export default function EntregadorLoginPage() {
     setError('')
     setLoading(true)
 
-    // Simular verificação
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    try {
+      const response = await fetch('/api/auth/deliverer-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cpf, telefone })
+      })
 
-    const entregador = mockEntregadores.find(
-      e => e.cpf === cpf && e.telefone === telefone
-    )
+      const data = await response.json()
 
-    if (!entregador) {
-      setError('CPF ou telefone não encontrado. Verifique os dados informados.')
+      if (!response.ok) {
+        setError(data.error || 'CPF ou telefone não encontrado. Verifique os dados informados.')
+        setLoading(false)
+        return
+      }
+
+      localStorage.setItem('entregadorId', data.entregador.id)
+      localStorage.setItem('entregadorNome', data.entregador.nome)
+      localStorage.setItem('termoAceito', data.entregador.termoAceito ? 'true' : 'false')
+
+      router.push(data.redirectTo)
+    } catch {
+      setError('Não foi possível acessar o portal agora.')
       setLoading(false)
-      return
-    }
-
-    // Salvar no localStorage para simular sessão
-    localStorage.setItem('entregadorId', entregador.id)
-    localStorage.setItem('entregadorNome', entregador.nome)
-    localStorage.setItem('termoAceito', entregador.termoAceito ? 'true' : 'false')
-
-    // Redirecionar baseado no status do termo
-    if (!entregador.termoAceito) {
-      router.push('/entregador/termo')
-    } else {
-      router.push('/entregador/painel')
     }
   }
 
@@ -121,11 +119,11 @@ export default function EntregadorLoginPage() {
               {loading ? 'Verificando...' : 'Acessar'}
             </Button>
 
-            <div className="mt-4 p-3 bg-muted rounded-lg">
-              <p className="text-xs text-muted-foreground text-center">
-                <strong>Teste:</strong> CPF: 123.456.789-00 | Tel: (11) 98888-1111
-              </p>
-            </div>
+          <div className="mt-4 p-3 bg-muted rounded-lg">
+            <p className="text-xs text-muted-foreground text-center">
+              <strong>Teste:</strong> CPF: 123.456.789-00 | Tel: (11) 98888-1111
+            </p>
+          </div>
           </form>
 
           <div className="mt-6 pt-4 border-t">

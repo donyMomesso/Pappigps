@@ -1,37 +1,34 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { FileText, AlertTriangle, CheckCircle2 } from 'lucide-react'
-import { TERMO_FREELANCER } from '@/mocks/data'
 
 export default function TermoAceitePage() {
   const router = useRouter()
   const [aceito, setAceito] = useState(false)
   const [leuTermo, setLeuTermo] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [entregadorNome, setEntregadorNome] = useState('')
+  const fetcher = async (url: string) => {
+    const response = await fetch(url, { cache: 'no-store' })
+    if (!response.ok) {
+      throw new Error('Falha ao carregar termo')
+    }
+    return response.json()
+  }
+  const { data } = useSWR('/api/entregador/me', fetcher)
+  const entregadorNome = data?.entregador?.nome || ''
 
   useEffect(() => {
-    const nome = localStorage.getItem('entregadorNome')
-    const termoAceito = localStorage.getItem('termoAceito')
-    
-    if (!nome) {
-      router.push('/entregador')
-      return
-    }
-    
-    if (termoAceito === 'true') {
+    if (data?.entregador?.termoAceito) {
       router.push('/entregador/painel')
-      return
     }
-    
-    setEntregadorNome(nome)
-  }, [router])
+  }, [data, router])
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const element = e.currentTarget
@@ -45,17 +42,14 @@ export default function TermoAceitePage() {
     if (!aceito) return
     
     setLoading(true)
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    localStorage.setItem('termoAceito', 'true')
+    await fetch('/api/entregador/me/termo', { method: 'POST' })
     router.push('/entregador/painel')
   }
 
   const handleRecusar = () => {
-    localStorage.removeItem('entregadorId')
-    localStorage.removeItem('entregadorNome')
-    localStorage.removeItem('termoAceito')
-    router.push('/entregador')
+    void fetch('/api/auth/logout', { method: 'POST' }).finally(() => {
+      router.push('/entregador')
+    })
   }
 
   return (
@@ -91,7 +85,7 @@ export default function TermoAceitePage() {
           >
             <div className="prose prose-sm max-w-none">
               <pre className="whitespace-pre-wrap font-sans text-sm text-foreground leading-relaxed">
-                {TERMO_FREELANCER}
+                {data?.termoFreelancer}
               </pre>
             </div>
           </ScrollArea>

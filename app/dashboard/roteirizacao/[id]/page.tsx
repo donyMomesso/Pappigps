@@ -1,12 +1,13 @@
 "use client"
 
 import { use } from "react"
+import useSWR from "swr"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, MapPin, Clock, Package, User, Phone, CheckCircle, Circle } from "lucide-react"
-import { mockRotas } from "@/mocks/data"
+import type { Rota } from "@/types"
 import { cn, formatCurrency, formatDistance, formatDuration, formatDateTime, getTipoVeiculoLabel, getStatusPedidoLabel, getStatusPedidoColor } from "@/lib/utils"
 
 const RouteMap = dynamic(
@@ -21,9 +22,18 @@ const RouteMap = dynamic(
   }
 )
 
+const fetcher = async (url: string) => {
+  const response = await fetch(url, { cache: "no-store" })
+  if (!response.ok) {
+    throw new Error("Falha ao carregar rotas")
+  }
+  return response.json()
+}
+
 export default function RotaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const rota = mockRotas.find(r => r.id === id)
+  const { data } = useSWR("/api/rotas", fetcher)
+  const rota = (data as Rota[] | undefined)?.find(r => r.id === id)
 
   if (!rota) {
     return (

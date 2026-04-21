@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -16,28 +17,32 @@ import {
   AlertCircle,
   Locate
 } from 'lucide-react'
-import { mockEntregadores, mockPedidos, mockLoja } from '@/mocks/data'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import type { Entregador, Pedido } from '@/types'
+import type { Entregador, Pedido, Loja } from '@/types'
 
 export default function EntregadorPainelPage() {
-  const [entregador, setEntregador] = useState<Entregador | null>(null)
-  const [entregasAtivas, setEntregasAtivas] = useState<Pedido[]>([])
   const [localizacaoAtiva, setLocalizacaoAtiva] = useState(false)
-  const [watchId, setWatchId] = useState<number | null>(null)
-
-  useEffect(() => {
-    const entregadorId = localStorage.getItem('entregadorId')
-    if (entregadorId) {
-      const found = mockEntregadores.find(e => e.id === entregadorId)
-      if (found) {
-        setEntregador(found)
-        setEntregasAtivas(mockPedidos.filter(
-          p => p.entregadorId === entregadorId && p.status === 'em_rota'
-        ))
-      }
+  const fetcher = async (url: string) => {
+    const response = await fetch(url, { cache: 'no-store' })
+    if (!response.ok) {
+      throw new Error('Falha ao carregar painel')
     }
-  }, [])
+    return response.json()
+  }
+  const { data: meData } = useSWR('/api/entregador/me', fetcher)
+  const { data: entregasData } = useSWR('/api/entregador/me/entregas', fetcher)
+  const entregador: Entregador | null = meData?.entregador ?? null
+  const loja: Loja | null = meData?.loja ?? null
+  const entregasAtivas: Pedido[] = entregasData?.ativas ?? []
+
+  const handleLocationToggle = (checked: boolean) => {
+    if (checked && !navigator.geolocation) {
+      alert('Geolocalização não suportada neste navegador')
+      return
+    }
+
+    setLocalizacaoAtiva(checked)
+  }
 
   useEffect(() => {
     if (localizacaoAtiva && entregador) {
@@ -45,12 +50,15 @@ export default function EntregadorPainelPage() {
         const id = navigator.geolocation.watchPosition(
           (position) => {
             const { latitude, longitude } = position.coords
-            // Salvar localização no localStorage para simulação
-            localStorage.setItem(`localizacao_${entregador.id}`, JSON.stringify({
-              latitude,
-              longitude,
-              timestamp: new Date().toISOString()
-            }))
+            void fetch('/api/entregador/me/localizacao', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                latitude,
+                longitude,
+                accuracy: position.coords.accuracy,
+              }),
+            })
           },
           (error) => {
             console.error('Erro ao obter localização:', error)
@@ -62,22 +70,14 @@ export default function EntregadorPainelPage() {
             maximumAge: 0
           }
         )
-        setWatchId(id)
+        return () => navigator.geolocation.clearWatch(id)
       } else {
         alert('Geolocalização não suportada neste navegador')
-        setLocalizacaoAtiva(false)
       }
-    } else if (watchId) {
-      navigator.geolocation.clearWatch(watchId)
-      setWatchId(null)
     }
 
-    return () => {
-      if (watchId) {
-        navigator.geolocation.clearWatch(watchId)
-      }
-    }
-  }, [localizacaoAtiva, entregador, watchId])
+    return undefined
+  }, [localizacaoAtiva, entregador])
 
   if (!entregador) {
     return <div className="p-6">Carregando...</div>
@@ -85,7 +85,7 @@ export default function EntregadorPainelPage() {
 
   const ganhoHoje = entregador.financeiro?.ganhosTaxas || 0
   const entregasHoje = entregasAtivas.length
-  const totalKmHoje = 12.5 // Mock
+  const totalKmHoje = Number((entregador.financeiro?.totalKmRodados || 0).toFixed(1))
 
   return (
     <div className="p-4 lg:p-6 pb-24 lg:pb-6 space-y-6">
@@ -145,7 +145,7 @@ export default function EntregadorPainelPage() {
             <Switch
               id="localizacao-toggle"
               checked={localizacaoAtiva}
-              onCheckedChange={setLocalizacaoAtiva}
+              onCheckedChange={handleLocationToggle}
             />
           </div>
           {localizacaoAtiva && (
@@ -229,11 +229,11 @@ export default function EntregadorPainelPage() {
         <CardContent>
           <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
             <div>
-              <p className="font-medium text-foreground">{mockLoja.nome}</p>
-              <p className="text-sm text-muted-foreground">{mockLoja.endereco.logradouro}, {mockLoja.endereco.numero}</p>
+              <p className="font-medium text-foreground">{loja?.nome}</p>
+              <p className="text-sm text-muted-foreground">{loja?.endereco.logradouro}, {loja?.endereco.numero}</p>
             </div>
             <div className="text-right">
-              <p className="font-medium text-emerald-600">08:00 - 22:00</p>
+              <p className="font-medium text-emerald-600">{loja?.horarioOperacao.segunda.abertura} - {loja?.horarioOperacao.segunda.fechamento}</p>
               <Badge variant="outline" className="text-green-600 border-green-600">Aberto</Badge>
             </div>
           </div>

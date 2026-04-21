@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import useSWR from 'swr'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -22,52 +23,63 @@ import {
   AlertCircle,
   CheckCircle2
 } from 'lucide-react'
-import { mockEntregadores, mockFinanceiroEntregador, mockLoja } from '@/mocks/data'
 import { formatCurrency } from '@/lib/utils'
 import type { Entregador, SaqueEntregador } from '@/types'
 
 export default function FinanceiroEntregadorPage() {
-  const [entregador, setEntregador] = useState<Entregador | null>(null)
+  const fetcher = async (url: string) => {
+    const response = await fetch(url, { cache: 'no-store' })
+    if (!response.ok) {
+      throw new Error('Falha ao carregar financeiro')
+    }
+    return response.json()
+  }
+  const { data, mutate } = useSWR('/api/entregador/me/financeiro', fetcher)
+  const entregador: Entregador | null = data?.entregador ?? null
+  const diariaEntregador = data?.diariaEntregador || 0
+
+  if (!entregador || !entregador.financeiro) {
+    return <div className="p-6">Carregando...</div>
+  }
+
+  return (
+    <FinanceiroEditor
+      entregador={entregador}
+      diariaEntregador={diariaEntregador}
+      onUpdated={() => void mutate()}
+    />
+  )
+}
+
+function FinanceiroEditor({
+  entregador,
+  diariaEntregador,
+  onUpdated,
+}: {
+  entregador: Entregador
+  diariaEntregador: number
+  onUpdated: () => void
+}) {
+  const financeiro = entregador.financeiro!
+  const saques: SaqueEntregador[] = financeiro.historicoSaques || []
   const [dialogOpen, setDialogOpen] = useState(false)
   const [valorSaque, setValorSaque] = useState('')
-  const [chavePix, setChavePix] = useState('')
-  const [saques, setSaques] = useState<SaqueEntregador[]>(mockFinanceiroEntregador.historicoSaques)
+  const [chavePix, setChavePix] = useState(entregador.chavePix || '')
 
-  useEffect(() => {
-    const entregadorId = localStorage.getItem('entregadorId')
-    if (entregadorId) {
-      const found = mockEntregadores.find(e => e.id === entregadorId)
-      if (found) {
-        setEntregador(found)
-        setChavePix(found.chavePix || '')
-      }
-    }
-  }, [])
-
-  const financeiro = mockFinanceiroEntregador
-
-  const handleSolicitarSaque = () => {
+  const handleSolicitarSaque = async () => {
     const valor = parseFloat(valorSaque.replace(',', '.'))
     if (isNaN(valor) || valor <= 0 || valor > financeiro.saldoDisponivel) {
       return
     }
 
-    const novoSaque: SaqueEntregador = {
-      id: `sq-${Date.now()}`,
-      entregadorId: entregador?.id || '1',
-      valor,
-      dataSolicitacao: new Date(),
-      status: 'pendente',
-      chavePix
-    }
-
-    setSaques([novoSaque, ...saques])
+    await fetch('/api/entregador/me/financeiro', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ valor, chavePix })
+    })
+    onUpdated()
     setDialogOpen(false)
     setValorSaque('')
-  }
-
-  if (!entregador) {
-    return <div className="p-6">Carregando...</div>
   }
 
   // Dados fictícios para o gráfico simplificado
@@ -105,7 +117,7 @@ export default function FinanceiroEntregadorPage() {
                 {formatCurrency(financeiro.saldoDisponivel)}
               </p>
               <p className="text-sm text-emerald-100 mt-1">
-                Diária: {formatCurrency(mockLoja.diariaEntregador)}/dia trabalhado
+                Diária: {formatCurrency(diariaEntregador)}/dia trabalhado
               </p>
             </div>
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -385,7 +397,7 @@ export default function FinanceiroEntregadorPage() {
               <p className="font-medium text-blue-800">Como funciona o pagamento?</p>
               <ul className="text-blue-700 mt-2 space-y-1">
                 <li>- Taxa por entrega: calculada por km rodado</li>
-                <li>- Diária: {formatCurrency(mockLoja.diariaEntregador)} por dia trabalhado</li>
+                <li>- Diária: {formatCurrency(diariaEntregador)} por dia trabalhado</li>
                 <li>- Saques disponíveis a qualquer momento</li>
                 <li>- Pagamento via PIX em até 24h úteis</li>
               </ul>

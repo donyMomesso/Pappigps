@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import useSWR from "swr"
 import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,7 +12,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "@/hooks/use-toast"
-import { mockConfiguracoes, mockLoja } from "@/mocks/data"
 import { Building2, Clock, Bell, Save, Loader2, MapPin, DollarSign, FileText, Users, Search } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import type { Configuracoes, IntegracaoPlataforma, Loja } from "@/types"
@@ -22,9 +22,13 @@ const LojaMap = dynamic(() => import('@/components/configuracoes/loja-map'), {
   loading: () => <div className="h-[300px] bg-muted animate-pulse rounded-lg" />
 })
 
-const LOJA_STORAGE_KEY = "pappigps_loja"
-const NOTIFICACOES_STORAGE_KEY = "pappigps_notificacoes"
-const TERMO_STORAGE_KEY = "pappigps_termo_freelancer"
+const fetcher = async (url: string) => {
+  const response = await fetch(url, { cache: "no-store" })
+  if (!response.ok) {
+    throw new Error("Falha ao carregar dados")
+  }
+  return response.json()
+}
 
 function IntegrationsTab() {
   const [integrations, setIntegrations] = useState<IntegracaoPlataforma[]>([])
@@ -211,37 +215,60 @@ const diasSemana = [
 ]
 
 export default function ConfiguracoesPage() {
-  const lojaInicial: Loja = typeof window !== "undefined"
-    ? JSON.parse(localStorage.getItem(LOJA_STORAGE_KEY) ?? "null") as Loja ?? mockLoja
-    : mockLoja
-  const notificacoesIniciais: Configuracoes["notificacoes"] = typeof window !== "undefined"
-    ? JSON.parse(localStorage.getItem(NOTIFICACOES_STORAGE_KEY) ?? "null") as Configuracoes["notificacoes"] ?? mockConfiguracoes.notificacoes
-    : mockConfiguracoes.notificacoes
-  const termoInicial = typeof window !== "undefined"
-    ? localStorage.getItem(TERMO_STORAGE_KEY) ?? mockConfiguracoes.termoFreelancer
-    : mockConfiguracoes.termoFreelancer
+  const { data, mutate } = useSWR<Configuracoes>("/api/configuracoes", fetcher)
 
+  if (!data) {
+    return (
+      <>
+        <Header title="Configurações" />
+        <div className="p-6 text-sm text-muted-foreground">Carregando configurações...</div>
+      </>
+    )
+  }
+
+  return <ConfiguracoesEditor initialData={data} mutate={mutate} />
+}
+
+function ConfiguracoesEditor({
+  initialData,
+  mutate,
+}: {
+  initialData: Configuracoes
+  mutate: (data?: Configuracoes, opts?: { revalidate?: boolean }) => Promise<Configuracoes | undefined>
+}) {
   const [isLoading, setIsLoading] = useState(false)
   const [isSearchingAddress, setIsSearchingAddress] = useState(false)
   const [isSearchingCnpj, setIsSearchingCnpj] = useState(false)
-  const [loja, setLoja] = useState<Loja>(lojaInicial)
-  const [notificacoes, setNotificacoes] = useState<Configuracoes["notificacoes"]>(notificacoesIniciais)
-  const [termoFreelancer, setTermoFreelancer] = useState(termoInicial)
-  const [latitudeInput, setLatitudeInput] = useState(lojaInicial.coordenadas.latitude.toFixed(6).replace(".", ","))
-  const [longitudeInput, setLongitudeInput] = useState(lojaInicial.coordenadas.longitude.toFixed(6).replace(".", ","))
+  const [loja, setLoja] = useState<Loja>(initialData.loja)
+  const [notificacoes, setNotificacoes] = useState<Configuracoes["notificacoes"]>(initialData.notificacoes)
+  const [termoFreelancer, setTermoFreelancer] = useState(initialData.termoFreelancer)
+  const [latitudeInput, setLatitudeInput] = useState(initialData.loja.coordenadas.latitude.toFixed(6).replace(".", ","))
+  const [longitudeInput, setLongitudeInput] = useState(initialData.loja.coordenadas.longitude.toFixed(6).replace(".", ","))
 
-  const persistirConfiguracoes = (proximaLoja = loja) => {
-    localStorage.setItem(LOJA_STORAGE_KEY, JSON.stringify(proximaLoja))
-    localStorage.setItem(NOTIFICACOES_STORAGE_KEY, JSON.stringify(notificacoes))
-    localStorage.setItem(TERMO_STORAGE_KEY, termoFreelancer)
+  const persistirConfiguracoes = async (proximaLoja = loja) => {
+    const payload: Configuracoes = {
+      loja: proximaLoja,
+      notificacoes,
+      termoFreelancer
+    }
+
+    const response = await fetch("/api/configuracoes", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) {
+      throw new Error("Falha ao salvar configurações")
+    }
+
+    await mutate(payload, { revalidate: false })
   }
 
   const handleSave = async () => {
     setIsLoading(true)
     try {
-      persistirConfiguracoes(loja)
-
-      await new Promise(resolve => setTimeout(resolve, 400))
+      await persistirConfiguracoes()
 
       toast({
         title: "Configurações salvas",
@@ -399,7 +426,7 @@ export default function ConfiguracoesPage() {
       )
 
       setLoja(proximaLoja)
-      persistirConfiguracoes(proximaLoja)
+      await persistirConfiguracoes(proximaLoja)
 
       toast({
         title: "Localização salva",
@@ -478,7 +505,7 @@ export default function ConfiguracoesPage() {
       const proximaLoja = await buscarCoordenadasDoEndereco(enderecoBase, lojaAtualizada)
 
       setLoja(proximaLoja)
-      persistirConfiguracoes(proximaLoja)
+      await persistirConfiguracoes(proximaLoja)
 
       toast({
         title: "Empresa encontrada",

@@ -6,9 +6,8 @@ import { StatCard } from "@/components/dashboard/stat-card"
 import { RecentOrders } from "@/components/dashboard/recent-orders"
 import { ActiveRoutes } from "@/components/dashboard/active-routes"
 import { DelivererTracking } from "@/components/dashboard/deliverer-tracking"
-import { mockRotas } from "@/mocks/data"
 import { formatCurrency } from "@/lib/utils"
-import type { Pedido } from "@/types"
+import type { Pedido, Rota } from "@/types"
 import { Package, Truck, Users, DollarSign, Clock, CheckCircle } from "lucide-react"
 
 const fetcher = async (url: string) => {
@@ -21,13 +20,15 @@ const fetcher = async (url: string) => {
 
 export default function DashboardPage() {
   const { data } = useSWR("/api/pedidos", fetcher)
+  const { data: rotasData } = useSWR("/api/rotas", fetcher)
+  const rotas: Rota[] = rotasData ?? []
   const stats = data?.stats ?? {
     pedidosHoje: 0,
     pedidosPendentes: 0,
     pedidosEntregues: 0,
     faturamentoHoje: 0,
     entregadoresAtivos: 0,
-    rotasAtivas: mockRotas.length,
+    rotasAtivas: rotas.length,
     ticketMedio: 0
   }
   const pedidos: Pedido[] = data?.pedidos ?? []
@@ -85,7 +86,7 @@ export default function DashboardPage() {
         {/* Tables */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <RecentOrders pedidos={pedidos} />
-          <ActiveRoutes rotas={mockRotas} />
+          <ActiveRoutes rotas={rotas} />
         </div>
 
         {/* Tracking */}
