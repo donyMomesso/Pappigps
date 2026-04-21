@@ -1,10 +1,16 @@
 // Enums
 export type StatusPedido = 'pendente' | 'em_rota' | 'entregue' | 'cancelado'
-export type StatusEntregador = 'disponivel' | 'em_rota' | 'offline'
-export type TipoVeiculo = 'moto' | 'carro' | 'van' | 'caminhao'
+export type StatusEntregador = 'disponivel' | 'em_rota' | 'offline' | 'pausado'
+export type TipoVeiculo = 'moto' | 'carro' | 'van' | 'caminhao' | 'bicicleta'
 export type FormaPagamento = 'dinheiro' | 'pix' | 'cartao' | 'boleto'
+export type TipoContrato = 'freelancer' | 'fixo'
 
 // Interfaces
+export interface Coordenadas {
+  latitude: number
+  longitude: number
+}
+
 export interface Endereco {
   logradouro: string
   numero: string
@@ -25,6 +31,17 @@ export interface Cliente {
   endereco: Endereco
 }
 
+export interface TaxaEntrega {
+  id: string
+  pedidoId: string
+  valorBase: number
+  valorPorKm: number
+  distanciaKm: number
+  valorTotal: number
+  dataPagamento?: Date
+  pago: boolean
+}
+
 export interface Pedido {
   id: string
   numero: string
@@ -41,6 +58,62 @@ export interface Pedido {
   rotaId?: string
   entregadorId?: string
   ordemEntrega?: number
+  taxaEntrega?: TaxaEntrega
+}
+
+export interface LocalizacaoEntregador {
+  entregadorId: string
+  coordenadas: Coordenadas
+  timestamp: Date
+  velocidade?: number
+  direcao?: number
+  precisao?: number
+}
+
+export interface AgendamentoDisponibilidade {
+  id: string
+  entregadorId: string
+  data: Date
+  horaInicio: string
+  horaFim: string
+  tipo: 'dia_completo' | 'periodo' | 'entrega_avulsa'
+  confirmado: boolean
+}
+
+export interface TermoAceite {
+  id: string
+  entregadorId: string
+  versao: string
+  dataAceite: Date
+  ipAceite: string
+  textoTermo: string
+}
+
+export interface FinanceiroEntregador {
+  entregadorId: string
+  periodo: string
+  totalEntregas: number
+  totalKmRodados: number
+  ganhosTaxas: number
+  bonificacoes: number
+  descontos: number
+  diaria: number
+  totalLiquido: number
+  saldoDisponivel: number
+  historicoSaques: SaqueEntregador[]
+}
+
+export interface SaqueEntregador {
+  id: string
+  entregadorId: string
+  valor: number
+  dataSolicitacao: Date
+  dataPagamento?: Date
+  status: 'pendente' | 'aprovado' | 'pago' | 'cancelado'
+  chavePix?: string
+  banco?: string
+  agencia?: string
+  conta?: string
 }
 
 export interface Entregador {
@@ -56,6 +129,16 @@ export interface Entregador {
   avaliacaoMedia?: number
   totalEntregas?: number
   dataCadastro: Date
+  tipoContrato: TipoContrato
+  termoAceito: boolean
+  termoAceiteData?: Date
+  localizacaoAtual?: LocalizacaoEntregador
+  agendamentos?: AgendamentoDisponibilidade[]
+  financeiro?: FinanceiroEntregador
+  chavePix?: string
+  banco?: string
+  agencia?: string
+  conta?: string
 }
 
 export interface Rota {
@@ -69,6 +152,7 @@ export interface Rota {
   dataCriacao: Date
   dataInicio?: Date
   dataFim?: Date
+  valorTotalTaxas?: number
 }
 
 export interface DashboardStats {
@@ -92,25 +176,41 @@ export interface FinanceiroResumo {
   taxaEntrega: number
 }
 
+export interface HorarioOperacao {
+  abertura: string
+  fechamento: string
+  ativo: boolean
+}
+
+export interface Loja {
+  id: string
+  nome: string
+  cnpj: string
+  telefone: string
+  email: string
+  endereco: Endereco
+  coordenadas: Coordenadas
+  horarioOperacao: {
+    domingo: HorarioOperacao
+    segunda: HorarioOperacao
+    terca: HorarioOperacao
+    quarta: HorarioOperacao
+    quinta: HorarioOperacao
+    sexta: HorarioOperacao
+    sabado: HorarioOperacao
+  }
+  raioEntregaKm: number
+  taxaEntregaBase: number
+  taxaPorKm: number
+  diariaEntregador: number
+}
+
 export interface Configuracoes {
-  empresa: {
-    nome: string
-    cnpj: string
-    telefone: string
-    email: string
-    endereco: Endereco
-  }
-  operacao: {
-    horarioInicio: string
-    horarioFim: string
-    diasFuncionamento: number[]
-    raioMaximoKm: number
-    taxaEntregaBase: number
-    taxaPorKm: number
-  }
+  loja: Loja
   notificacoes: {
     emailNovoPedido: boolean
     smsCliente: boolean
     pushEntregador: boolean
   }
+  termoFreelancer: string
 }
