@@ -26,9 +26,12 @@ function processCardapioWebOrder(orderData: any): Pedido {
     longitude: orderData.delivery?.address?.longitude
   }
 
+  const orderId = orderData.id || orderData.orderId || orderData.numero || orderData.number || orderData.orderNumber
+  const pedidoNumero = orderData.number || orderData.orderNumber || orderData.id?.toString() || orderData.orderId?.toString() || orderData.numero || ''
+
   return {
-    id: `cardapioweb_${orderData.id || orderData.orderId || orderData.numero}`,
-    numero: orderData.number || orderData.orderNumber || orderData.id?.toString() || '',
+    id: `cardapioweb_${orderId}`,
+    numero: pedidoNumero,
     cliente: {
       id: orderData.customer?.id?.toString() || orderData.cliente?.id?.toString() || '',
       nome: orderData.customer?.name || orderData.cliente?.nome || '',
@@ -49,8 +52,8 @@ function processCardapioWebOrder(orderData: any): Pedido {
     entregadorId: undefined,
     ordemEntrega: undefined,
     taxaEntrega: {
-      id: `taxa_${orderData.id || orderData.orderId}`,
-      pedidoId: `cardapioweb_${orderData.id || orderData.orderId}`,
+      id: `taxa_${orderId}`,
+      pedidoId: `cardapioweb_${orderId}`,
       valorBase: orderData.deliveryFee || orderData.taxaEntrega || 0,
       valorPorKm: 0,
       distanciaKm: 0,
@@ -72,9 +75,11 @@ export async function POST(request: NextRequest) {
 
     // Parse do corpo da requisição
     const orderData = await request.json()
+    const orderId = orderData.id || orderData.orderId || orderData.numero || orderData.number || orderData.orderNumber
+    const storeId = orderData.storeId || orderData.lojaId || orderData.restaurantId || orderData.store_id || orderData.restaurant_id
 
     // Validar dados obrigatórios
-    if (!orderData.id && !orderData.orderId && !orderData.numero) {
+    if (!orderId) {
       return NextResponse.json(
         { error: 'Dados do pedido inválidos - ID do pedido obrigatório' },
         { status: 400 }
@@ -82,7 +87,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar se é da loja correta (5371)
-    const storeId = orderData.storeId || orderData.lojaId || orderData.restaurantId
     const expectedStoreId = process.env.CARDAPIO_WEB_STORE_ID || '5371'
 
     if (storeId && storeId.toString() !== expectedStoreId) {
