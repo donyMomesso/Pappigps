@@ -124,8 +124,9 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Erro no webhook CardapioWeb:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
     return NextResponse.json(
-      { error: 'Erro interno do servidor', details: error.message },
+      { error: 'Erro interno do servidor', details: errorMessage },
       { status: 500 }
     )
   }
