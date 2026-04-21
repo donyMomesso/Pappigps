@@ -80,12 +80,8 @@ export async function POST(request: NextRequest) {
     // Processar pedido
     const pedido = process99FoodOrder(orderData)
 
-    // Simular salvamento
-    const pedidosExistentes = JSON.parse(localStorage.getItem('pedidos_99food') || '[]')
-    pedidosExistentes.push(pedido)
-    localStorage.setItem('pedidos_99food', JSON.stringify(pedidosExistentes))
-
-    // Log do pedido recebido
+    // Em ambiente de servidor, não há localStorage.
+    // Aqui apenas registramos o pedido para debug.
     console.log('Pedido 99Food recebido:', pedido)
 
     // Responder sucesso

@@ -95,17 +95,8 @@ export async function POST(request: NextRequest) {
     // Processar pedido
     const pedido = processCardapioWebOrder(orderData)
 
-    // Simular salvamento
-    const pedidosExistentes = JSON.parse(localStorage.getItem('pedidos_cardapioweb') || '[]')
-    pedidosExistentes.push({
-      ...pedido,
-      receivedAt: new Date(),
-      platform: 'cardapioweb',
-      storeId: expectedStoreId
-    })
-    localStorage.setItem('pedidos_cardapioweb', JSON.stringify(pedidosExistentes))
-
-    // Log do pedido recebido
+    // Em ambiente de servidor, não há localStorage.
+    // Aqui apenas registramos o pedido para debug.
     console.log('Pedido CardapioWeb recebido:', {
       pedido: pedido.numero,
       cliente: pedido.cliente.nome,

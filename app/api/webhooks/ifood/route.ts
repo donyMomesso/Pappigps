@@ -80,12 +80,8 @@ export async function POST(request: NextRequest) {
     // Processar pedido
     const pedido = processIfoodOrder(orderData)
 
-    // Simular salvamento (em produção, salvaria no banco)
-    const pedidosExistentes = JSON.parse(localStorage.getItem('pedidos_ifood') || '[]')
-    pedidosExistentes.push(pedido)
-    localStorage.setItem('pedidos_ifood', JSON.stringify(pedidosExistentes))
-
-    // Log do pedido recebido
+    // Em ambiente de servidor, não há localStorage.
+    // Aqui apenas registramos o pedido para debug.
     console.log('Pedido iFood recebido:', pedido)
 
     // Responder sucesso
