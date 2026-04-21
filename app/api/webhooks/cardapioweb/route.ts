@@ -63,6 +63,39 @@ function processCardapioWebOrder(orderData: any): Pedido {
   }
 }
 
+async function parseWebhookBody(request: NextRequest) {
+  const contentType = request.headers.get('content-type') || ''
+
+  if (contentType.includes('application/json')) {
+    return request.json()
+  }
+
+  if (contentType.includes('application/x-www-form-urlencoded')) {
+    const text = await request.text()
+    return Object.fromEntries(new URLSearchParams(text).entries())
+  }
+
+  if (contentType.includes('multipart/form-data')) {
+    const formData = await request.formData()
+    const data: Record<string, undefined | string> = {}
+    formData.forEach((value, key) => {
+      data[key] = typeof value === 'string' ? value : undefined
+    })
+    return data
+  }
+
+  const text = await request.text()
+  if (text.trim().startsWith('{')) {
+    try {
+      return JSON.parse(text)
+    } catch {
+      return { raw: text }
+    }
+  }
+
+  return Object.fromEntries(new URLSearchParams(text).entries())
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Validar webhook
@@ -74,7 +107,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse do corpo da requisição
-    const orderData = await request.json()
+    const orderData = await parseWebhookBody(request)
     const orderId = orderData.id || orderData.orderId || orderData.numero || orderData.number || orderData.orderNumber
     const storeId = orderData.storeId || orderData.lojaId || orderData.restaurantId || orderData.store_id || orderData.restaurant_id
 
