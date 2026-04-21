@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { 
   Package, 
   DollarSign, 
@@ -11,7 +13,8 @@ import {
   MapPin, 
   Navigation,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  Locate
 } from 'lucide-react'
 import { mockEntregadores, mockPedidos, mockLoja } from '@/mocks/data'
 import { formatCurrency, formatDate } from '@/lib/utils'
@@ -20,6 +23,8 @@ import type { Entregador, Pedido } from '@/types'
 export default function EntregadorPainelPage() {
   const [entregador, setEntregador] = useState<Entregador | null>(null)
   const [entregasAtivas, setEntregasAtivas] = useState<Pedido[]>([])
+  const [localizacaoAtiva, setLocalizacaoAtiva] = useState(false)
+  const [watchId, setWatchId] = useState<number | null>(null)
 
   useEffect(() => {
     const entregadorId = localStorage.getItem('entregadorId')
@@ -33,6 +38,46 @@ export default function EntregadorPainelPage() {
       }
     }
   }, [])
+
+  useEffect(() => {
+    if (localizacaoAtiva && entregador) {
+      if (navigator.geolocation) {
+        const id = navigator.geolocation.watchPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords
+            // Salvar localização no localStorage para simulação
+            localStorage.setItem(`localizacao_${entregador.id}`, JSON.stringify({
+              latitude,
+              longitude,
+              timestamp: new Date().toISOString()
+            }))
+          },
+          (error) => {
+            console.error('Erro ao obter localização:', error)
+            setLocalizacaoAtiva(false)
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+          }
+        )
+        setWatchId(id)
+      } else {
+        alert('Geolocalização não suportada neste navegador')
+        setLocalizacaoAtiva(false)
+      }
+    } else if (watchId) {
+      navigator.geolocation.clearWatch(watchId)
+      setWatchId(null)
+    }
+
+    return () => {
+      if (watchId) {
+        navigator.geolocation.clearWatch(watchId)
+      }
+    }
+  }, [localizacaoAtiva, entregador, watchId])
 
   if (!entregador) {
     return <div className="p-6">Carregando...</div>
@@ -73,6 +118,44 @@ export default function EntregadorPainelPage() {
               {entregasAtivas.length} entrega(s) ativa(s)
             </Badge>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Localização em Tempo Real */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Locate className="w-4 h-4" />
+            Localização em Tempo Real
+          </CardTitle>
+          <CardDescription>
+            Ative para compartilhar sua localização durante as entregas
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label htmlFor="localizacao-toggle" className="text-sm font-medium">
+                Compartilhar localização
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Permite rastreamento em tempo real para melhor gestão das rotas
+              </p>
+            </div>
+            <Switch
+              id="localizacao-toggle"
+              checked={localizacaoAtiva}
+              onCheckedChange={setLocalizacaoAtiva}
+            />
+          </div>
+          {localizacaoAtiva && (
+            <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-xs text-green-700 flex items-center gap-1">
+                <Locate className="w-3 h-3" />
+                Localização ativa - Compartilhando em tempo real
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

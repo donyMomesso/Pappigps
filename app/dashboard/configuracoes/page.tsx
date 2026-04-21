@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,8 +10,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { toast } from "@/hooks/use-toast"
 import { mockConfiguracoes, mockLoja } from "@/mocks/data"
-import { Building2, Clock, Bell, Save, Loader2, MapPin, DollarSign, FileText, Users } from "lucide-react"
+import { Building2, Clock, Bell, Save, Loader2, MapPin, DollarSign, FileText, Users, Search } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import dynamic from 'next/dynamic'
 
@@ -19,6 +20,180 @@ const LojaMap = dynamic(() => import('@/components/configuracoes/loja-map'), {
   ssr: false,
   loading: () => <div className="h-[300px] bg-muted animate-pulse rounded-lg" />
 })
+
+const LOJA_STORAGE_KEY = "pappigps_loja"
+const NOTIFICACOES_STORAGE_KEY = "pappigps_notificacoes"
+const TERMO_STORAGE_KEY = "pappigps_termo_freelancer"
+
+function IntegrationsTab() {
+  const [integrations, setIntegrations] = useState([])
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    fetchIntegrations()
+  }, [])
+
+  const fetchIntegrations = async () => {
+    try {
+      const response = await fetch('/api/integrations')
+      const data = await response.json()
+      setIntegrations(data)
+    } catch (error) {
+      console.error('Erro ao carregar integrações:', error)
+    }
+  }
+
+  const handleUpdateIntegration = async (integration: any) => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/integrations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(integration)
+      })
+      const updated = await response.json()
+      setIntegrations(prev => prev.map(i => i.id === updated.id ? updated : i))
+    } catch (error) {
+      console.error('Erro ao atualizar integração:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleTestConnection = async (id: string) => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/integrations', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      })
+      const result = await response.json()
+      alert(result.message)
+      fetchIntegrations()
+    } catch (error) {
+      console.error('Erro ao testar conexão:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Integrações com Plataformas</CardTitle>
+          <CardDescription>
+            Conecte com iFood, 99Food e outras plataformas para receber pedidos automaticamente
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {integrations.map((integration: any) => (
+            <Card key={integration.id} className="border-l-4 border-l-blue-500">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">{integration.nome}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Webhook: {integration.webhookUrl}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge variant={integration.status === 'conectado' ? 'default' : 'secondary'}>
+                    {integration.status}
+                  </Badge>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4 mb-4">
+                  <div className="space-y-2">
+                    <Label>Store ID</Label>
+                    <Input
+                      value={integration.storeId}
+                      onChange={(e) => setIntegrations(prev => prev.map(i =>
+                        i.id === integration.id ? { ...i, storeId: e.target.value } : i
+                      ))}
+                      placeholder="ID da loja na plataforma"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input
+                      type="password"
+                      value={integration.apiKey}
+                      onChange={(e) => setIntegrations(prev => prev.map(i =>
+                        i.id === integration.id ? { ...i, apiKey: e.target.value } : i
+                      ))}
+                      placeholder="Chave de API da plataforma"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={integration.ativo}
+                      onCheckedChange={(checked) => setIntegrations(prev => prev.map(i =>
+                        i.id === integration.id ? { ...i, ativo: checked } : i
+                      ))}
+                    />
+                    <Label>Ativo</Label>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleTestConnection(integration.id)}
+                      disabled={loading}
+                    >
+                      Testar Conexão
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleUpdateIntegration(integration)}
+                      disabled={loading}
+                    >
+                      Salvar
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Como Configurar</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <h4 className="font-medium mb-2">1. Obter credenciais da plataforma</h4>
+            <p className="text-sm text-muted-foreground">
+              Acesse o painel do parceiro (iFood, 99Food) e gere uma API Key e obtenha o Store ID.
+            </p>
+          </div>
+          <div>
+            <h4 className="font-medium mb-2">2. Configurar webhook</h4>
+            <p className="text-sm text-muted-foreground">
+              No painel da plataforma, configure o webhook para enviar pedidos para a URL mostrada acima.
+            </p>
+          </div>
+          <div>
+            <h4 className="font-medium mb-2">3. Testar conexão</h4>
+            <p className="text-sm text-muted-foreground">
+              Use o botão "Testar Conexão" para verificar se a integração está funcionando.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
 
 const diasSemana = [
   { key: 'domingo', label: 'Domingo' },
@@ -32,22 +207,320 @@ const diasSemana = [
 
 export default function ConfiguracoesPage() {
   const [isLoading, setIsLoading] = useState(false)
+  const [isSearchingAddress, setIsSearchingAddress] = useState(false)
+  const [isSearchingCnpj, setIsSearchingCnpj] = useState(false)
   const [loja, setLoja] = useState(mockLoja)
   const [notificacoes, setNotificacoes] = useState(mockConfiguracoes.notificacoes)
   const [termoFreelancer, setTermoFreelancer] = useState(mockConfiguracoes.termoFreelancer)
+  const [latitudeInput, setLatitudeInput] = useState(String(mockLoja.coordenadas.latitude).replace(".", ","))
+  const [longitudeInput, setLongitudeInput] = useState(String(mockLoja.coordenadas.longitude).replace(".", ","))
+
+  const persistirConfiguracoes = (proximaLoja = loja) => {
+    localStorage.setItem(LOJA_STORAGE_KEY, JSON.stringify(proximaLoja))
+    localStorage.setItem(NOTIFICACOES_STORAGE_KEY, JSON.stringify(notificacoes))
+    localStorage.setItem(TERMO_STORAGE_KEY, termoFreelancer)
+  }
+
+  useEffect(() => {
+    const lojaSalva = localStorage.getItem(LOJA_STORAGE_KEY)
+    const notificacoesSalvas = localStorage.getItem(NOTIFICACOES_STORAGE_KEY)
+    const termoSalvo = localStorage.getItem(TERMO_STORAGE_KEY)
+
+    if (lojaSalva) {
+      setLoja(JSON.parse(lojaSalva))
+    }
+
+    if (notificacoesSalvas) {
+      setNotificacoes(JSON.parse(notificacoesSalvas))
+    }
+
+    if (termoSalvo) {
+      setTermoFreelancer(termoSalvo)
+    }
+  }, [])
+
+  useEffect(() => {
+    setLatitudeInput(loja.coordenadas.latitude.toFixed(6).replace(".", ","))
+    setLongitudeInput(loja.coordenadas.longitude.toFixed(6).replace(".", ","))
+  }, [loja.coordenadas.latitude, loja.coordenadas.longitude])
 
   const handleSave = async () => {
     setIsLoading(true)
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setIsLoading(false)
+    try {
+      persistirConfiguracoes(loja)
+
+      await new Promise(resolve => setTimeout(resolve, 400))
+
+      toast({
+        title: "Configurações salvas",
+        description: "Os dados da loja foram atualizados com sucesso."
+      })
+    } catch {
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível salvar as configurações agora.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleCoordenadasChange = (lat: number, lng: number) => {
-    setLoja({
-      ...loja,
+    setLoja((prev) => ({
+      ...prev,
       coordenadas: { latitude: lat, longitude: lng },
-      endereco: { ...loja.endereco, latitude: lat, longitude: lng }
-    })
+      endereco: { ...prev.endereco, latitude: lat, longitude: lng }
+    }))
+  }
+
+  const formatarCnpj = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 14)
+
+    if (digits.length <= 2) return digits
+    if (digits.length <= 5) return `${digits.slice(0, 2)}.${digits.slice(2)}`
+    if (digits.length <= 8) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`
+    if (digits.length <= 12) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8)}`
+    return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`
+  }
+
+  const formatarCoordenada = (value: number) => value.toFixed(6).replace(".", ",")
+
+  const parseCoordenada = (value: string) => {
+    const normalized = value.replace(",", ".").trim()
+    if (!normalized) return null
+    const parsed = Number(normalized)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+
+  const handleEnderecoFieldChange = (field: keyof typeof loja.endereco, value: string) => {
+    setLoja((prev) => ({
+      ...prev,
+      endereco: { ...prev.endereco, [field]: value }
+    }))
+  }
+
+  const buscarCoordenadasDoEndereco = async (
+    enderecoBase: typeof loja.endereco,
+    lojaBase = loja
+  ) => {
+    const enderecoCompleto = [
+      enderecoBase.logradouro,
+      enderecoBase.numero,
+      enderecoBase.bairro,
+      enderecoBase.cidade,
+      enderecoBase.uf,
+      enderecoBase.cep,
+      "Brasil"
+    ]
+      .filter(Boolean)
+      .join(", ")
+
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(enderecoCompleto)}&format=json&addressdetails=1&limit=1`
+    )
+
+    if (!response.ok) {
+      throw new Error("Falha ao buscar endereço")
+    }
+
+    const data = await response.json()
+
+    if (!data?.length) {
+      throw new Error("Endereço não encontrado")
+    }
+
+    const resultado = data[0]
+    const latitude = Number(resultado.lat)
+    const longitude = Number(resultado.lon)
+    const address = resultado.address ?? {}
+
+    return {
+      ...lojaBase,
+      coordenadas: { latitude, longitude },
+      endereco: {
+        ...enderecoBase,
+        logradouro: address.road || address.pedestrian || enderecoBase.logradouro,
+        bairro: address.suburb || address.neighbourhood || enderecoBase.bairro,
+        cidade: address.city || address.town || address.village || enderecoBase.cidade,
+        uf: address.state_code || enderecoBase.uf,
+        cep: address.postcode || enderecoBase.cep,
+        latitude,
+        longitude
+      }
+    }
+  }
+
+  const handleBuscarEndereco = async () => {
+    const cepLimpo = loja.endereco.cep.replace(/\D/g, "")
+    const buscarPorCep = cepLimpo.length === 8
+
+    if (!buscarPorCep && !loja.endereco.logradouro.trim()) {
+      toast({
+        title: "Informe o endereço",
+        description: "Preencha o CEP ou o endereço da loja antes de buscar a localização.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsSearchingAddress(true)
+
+    try {
+      let dadosEndereco = { ...loja.endereco, cep: cepLimpo || loja.endereco.cep }
+
+      if (buscarPorCep) {
+        const cepResponse = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`)
+
+        if (!cepResponse.ok) {
+          throw new Error("Falha ao consultar CEP")
+        }
+
+        const cepData = await cepResponse.json()
+
+        if (cepData.erro) {
+          toast({
+            title: "CEP não encontrado",
+            description: "Revise o CEP informado e tente novamente.",
+            variant: "destructive"
+          })
+          return
+        }
+
+        dadosEndereco = {
+          ...dadosEndereco,
+          logradouro: cepData.logradouro || dadosEndereco.logradouro,
+          bairro: cepData.bairro || dadosEndereco.bairro,
+          cidade: cepData.localidade || dadosEndereco.cidade,
+          uf: cepData.uf || dadosEndereco.uf,
+          cep: cepData.cep || dadosEndereco.cep
+        }
+      }
+      const proximaLoja = await buscarCoordenadasDoEndereco(
+        {
+          ...dadosEndereco,
+          numero: loja.endereco.numero
+        },
+        loja
+      )
+
+      setLoja(proximaLoja)
+      persistirConfiguracoes(proximaLoja)
+
+      toast({
+        title: "Localização salva",
+        description: buscarPorCep
+          ? "CEP consultado, coordenadas encontradas e loja salva com sucesso."
+          : "As coordenadas da loja foram atualizadas e salvas."
+      })
+    } catch {
+      toast({
+        title: "Erro na busca",
+        description: "Não foi possível consultar o CEP/endereço agora.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsSearchingAddress(false)
+    }
+  }
+
+  const handleCepChange = (value: string) => {
+    const cepLimpo = value.replace(/\D/g, "").slice(0, 8)
+    const cepFormatado = cepLimpo.length > 5 ? `${cepLimpo.slice(0, 5)}-${cepLimpo.slice(5)}` : cepLimpo
+
+    handleEnderecoFieldChange("cep", cepFormatado)
+  }
+
+  const handleCnpjChange = (value: string) => {
+    setLoja((prev) => ({
+      ...prev,
+      cnpj: formatarCnpj(value)
+    }))
+  }
+
+  const handleBuscarCnpj = async () => {
+    const cnpjLimpo = loja.cnpj.replace(/\D/g, "")
+
+    if (cnpjLimpo.length !== 14) {
+      toast({
+        title: "CNPJ inválido",
+        description: "Informe um CNPJ com 14 dígitos para buscar os dados da empresa.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsSearchingCnpj(true)
+
+    try {
+      const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`)
+
+      if (!response.ok) {
+        throw new Error("Falha ao consultar CNPJ")
+      }
+
+      const empresa = await response.json()
+      const telefone = empresa.ddd_telefone_1 || empresa.ddd_telefone_2 || loja.telefone
+      const email = empresa.email || loja.email
+      const enderecoBase = {
+        ...loja.endereco,
+        logradouro: empresa.logradouro || loja.endereco.logradouro,
+        numero: empresa.numero || loja.endereco.numero,
+        bairro: empresa.bairro || loja.endereco.bairro,
+        cidade: empresa.municipio || loja.endereco.cidade,
+        uf: empresa.uf || loja.endereco.uf,
+        cep: empresa.cep || loja.endereco.cep
+      }
+
+      const lojaAtualizada = {
+        ...loja,
+        nome: empresa.nome_fantasia || empresa.razao_social || loja.nome,
+        cnpj: formatarCnpj(cnpjLimpo),
+        telefone,
+        email,
+        endereco: enderecoBase
+      }
+
+      const proximaLoja = await buscarCoordenadasDoEndereco(enderecoBase, lojaAtualizada)
+
+      setLoja(proximaLoja)
+      persistirConfiguracoes(proximaLoja)
+
+      toast({
+        title: "Empresa encontrada",
+        description: "Os dados do CNPJ, endereço e coordenadas foram atualizados e salvos."
+      })
+    } catch {
+      toast({
+        title: "Erro ao buscar CNPJ",
+        description: "Não foi possível consultar a empresa agora.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsSearchingCnpj(false)
+    }
+  }
+
+  const handleBuscarPorCep = async () => {
+    await handleBuscarEndereco()
+  }
+
+  const handleLatitudeChange = (value: string) => {
+    setLatitudeInput(value)
+    const latitude = parseCoordenada(value)
+
+    if (latitude !== null) {
+      handleCoordenadasChange(latitude, loja.coordenadas.longitude)
+    }
+  }
+
+  const handleLongitudeChange = (value: string) => {
+    setLongitudeInput(value)
+    const longitude = parseCoordenada(value)
+
+    if (longitude !== null) {
+      handleCoordenadasChange(loja.coordenadas.latitude, longitude)
+    }
   }
 
   return (
@@ -81,6 +554,10 @@ export default function ConfiguracoesPage() {
               <Bell className="w-4 h-4 mr-2" />
               Notificações
             </TabsTrigger>
+            <TabsTrigger value="integracoes" className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-700">
+              <FileText className="w-4 h-4 mr-2" />
+              Integrações
+            </TabsTrigger>
           </TabsList>
 
           {/* Empresa Tab */}
@@ -102,11 +579,38 @@ export default function ConfiguracoesPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="cnpj">CNPJ</Label>
-                    <Input 
-                      id="cnpj" 
-                      value={loja.cnpj}
-                      onChange={(e) => setLoja({ ...loja, cnpj: e.target.value })}
-                    />
+                    <div className="flex gap-3">
+                      <Input 
+                        id="cnpj" 
+                        value={loja.cnpj}
+                        inputMode="numeric"
+                        placeholder="00.000.000/0000-00"
+                        onChange={(e) => handleCnpjChange(e.target.value)}
+                        onBlur={() => {
+                          if (loja.cnpj.replace(/\D/g, "").length === 14) {
+                            void handleBuscarCnpj()
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleBuscarCnpj}
+                        disabled={isSearchingCnpj}
+                      >
+                        {isSearchingCnpj ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Buscando...
+                          </>
+                        ) : (
+                          <>
+                            <Search className="w-4 h-4 mr-2" />
+                            Buscar CNPJ
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -142,10 +646,7 @@ export default function ConfiguracoesPage() {
                       <Input 
                         id="logradouro" 
                         value={loja.endereco.logradouro}
-                        onChange={(e) => setLoja({
-                          ...loja,
-                          endereco: { ...loja.endereco, logradouro: e.target.value }
-                        })}
+                        onChange={(e) => handleEnderecoFieldChange("logradouro", e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
@@ -153,23 +654,17 @@ export default function ConfiguracoesPage() {
                       <Input 
                         id="numero" 
                         value={loja.endereco.numero}
-                        onChange={(e) => setLoja({
-                          ...loja,
-                          endereco: { ...loja.endereco, numero: e.target.value }
-                        })}
+                        onChange={(e) => handleEnderecoFieldChange("numero", e.target.value)}
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-4 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="bairro">Bairro</Label>
                       <Input 
                         id="bairro" 
                         value={loja.endereco.bairro}
-                        onChange={(e) => setLoja({
-                          ...loja,
-                          endereco: { ...loja.endereco, bairro: e.target.value }
-                        })}
+                        onChange={(e) => handleEnderecoFieldChange("bairro", e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
@@ -177,10 +672,16 @@ export default function ConfiguracoesPage() {
                       <Input 
                         id="cidade" 
                         value={loja.endereco.cidade}
-                        onChange={(e) => setLoja({
-                          ...loja,
-                          endereco: { ...loja.endereco, cidade: e.target.value }
-                        })}
+                        onChange={(e) => handleEnderecoFieldChange("cidade", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="uf">UF</Label>
+                      <Input 
+                        id="uf" 
+                        value={loja.endereco.uf}
+                        maxLength={2}
+                        onChange={(e) => handleEnderecoFieldChange("uf", e.target.value.toUpperCase())}
                       />
                     </div>
                     <div className="space-y-2">
@@ -188,12 +689,73 @@ export default function ConfiguracoesPage() {
                       <Input 
                         id="cep" 
                         value={loja.endereco.cep}
-                        onChange={(e) => setLoja({
-                          ...loja,
-                          endereco: { ...loja.endereco, cep: e.target.value }
-                        })}
+                        inputMode="numeric"
+                        placeholder="00000-000"
+                        onChange={(e) => handleCepChange(e.target.value)}
+                        onBlur={() => {
+                          if (loja.endereco.cep.replace(/\D/g, "").length === 8) {
+                            void handleBuscarPorCep()
+                          }
+                        }}
                       />
                     </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleBuscarEndereco}
+                      disabled={isSearchingAddress}
+                    >
+                      {isSearchingAddress ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Buscando...
+                        </>
+                      ) : (
+                        <>
+                          <Search className="w-4 h-4 mr-2" />
+                          Buscar Endereço
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleBuscarPorCep}
+                      disabled={isSearchingAddress}
+                    >
+                      {isSearchingAddress ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Buscando CEP...
+                        </>
+                      ) : (
+                        <>
+                          <Search className="w-4 h-4 mr-2" />
+                          Buscar pelo CEP
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleSave}
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Salvando...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4 mr-2" />
+                          Salvar Loja
+                        </>
+                      )}
+                    </Button>
                   </div>
 
                   <div className="pt-4 border-t">
@@ -211,27 +773,29 @@ export default function ConfiguracoesPage() {
                         <Label htmlFor="latitude">Latitude</Label>
                         <Input 
                           id="latitude" 
-                          type="number"
-                          step="0.0001"
-                          value={loja.coordenadas.latitude}
-                          onChange={(e) => handleCoordenadasChange(
-                            Number(e.target.value),
-                            loja.coordenadas.longitude
-                          )}
+                          type="text"
+                          inputMode="decimal"
+                          value={latitudeInput}
+                          onChange={(e) => handleLatitudeChange(e.target.value)}
+                          onBlur={() => setLatitudeInput(formatarCoordenada(loja.coordenadas.latitude))}
                         />
+                        <p className="text-xs text-muted-foreground">
+                          Valor salvo: {formatarCoordenada(loja.coordenadas.latitude)}
+                        </p>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="longitude">Longitude</Label>
                         <Input 
                           id="longitude" 
-                          type="number"
-                          step="0.0001"
-                          value={loja.coordenadas.longitude}
-                          onChange={(e) => handleCoordenadasChange(
-                            loja.coordenadas.latitude,
-                            Number(e.target.value)
-                          )}
+                          type="text"
+                          inputMode="decimal"
+                          value={longitudeInput}
+                          onChange={(e) => handleLongitudeChange(e.target.value)}
+                          onBlur={() => setLongitudeInput(formatarCoordenada(loja.coordenadas.longitude))}
                         />
+                        <p className="text-xs text-muted-foreground">
+                          Valor salvo: {formatarCoordenada(loja.coordenadas.longitude)}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -491,6 +1055,11 @@ export default function ConfiguracoesPage() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Integrações Tab */}
+          <TabsContent value="integracoes">
+            <IntegrationsTab />
           </TabsContent>
         </Tabs>
 

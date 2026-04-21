@@ -1,6 +1,7 @@
 "use client"
 
-import { MapContainer, TileLayer, Marker, Circle, useMapEvents } from 'react-leaflet'
+import { useEffect } from 'react'
+import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import type { Coordenadas } from '@/types'
@@ -27,6 +28,16 @@ function MapClickHandler({ onCoordenadasChange }: MapClickHandlerProps) {
   return null
 }
 
+function RecenterMap({ coordenadas }: { coordenadas: Coordenadas }) {
+  const map = useMap()
+
+  useEffect(() => {
+    map.setView([coordenadas.latitude, coordenadas.longitude], map.getZoom())
+  }, [coordenadas.latitude, coordenadas.longitude, map])
+
+  return null
+}
+
 interface LojaMapProps {
   coordenadas: Coordenadas
   raioKm: number
@@ -49,6 +60,7 @@ export default function LojaMap({ coordenadas, raioKm, onCoordenadasChange }: Lo
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
+        <RecenterMap coordenadas={coordenadas} />
         <MapClickHandler onCoordenadasChange={onCoordenadasChange} />
 
         <Marker position={position} icon={lojaIcon} />

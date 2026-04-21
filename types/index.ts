@@ -214,3 +214,23 @@ export interface Configuracoes {
   }
   termoFreelancer: string
 }
+
+export interface IntegracaoPlataforma {
+  id: string
+  nome: string
+  plataforma: 'ifood' | '99food' | 'ubereats' | 'rappi' | 'outro'
+  ativo: boolean
+  storeId: string
+  apiKey: string
+  webhookUrl: string
+  ultimaSincronizacao?: Date
+  status: 'conectado' | 'desconectado' | 'erro'
+}
+
+export interface PedidoPlataforma {
+  plataforma: string
+  orderId: string
+  pedido: Pedido
+  recebidoEm: Date
+  processado: boolean
+}
