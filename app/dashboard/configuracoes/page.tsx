@@ -215,7 +215,18 @@ const diasSemana = [
 ]
 
 export default function ConfiguracoesPage() {
-  const { data, mutate } = useSWR<Configuracoes>("/api/configuracoes", fetcher)
+  const { data, error, mutate } = useSWR<Configuracoes>("/api/configuracoes", fetcher)
+
+  if (error) {
+    return (
+      <>
+        <Header title="Configurações" />
+        <div className="p-6 text-sm text-destructive">
+          Erro ao carregar configurações. Atualize a página ou tente novamente mais tarde.
+        </div>
+      </>
+    )
+  }
 
   if (!data) {
     return (
