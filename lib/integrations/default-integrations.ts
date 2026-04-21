@@ -25,13 +25,13 @@ export function getDefaultIntegrations(): IntegracaoPlataforma[] {
       status: "desconectado"
     },
     {
-      id: "cardapio_web_001",
-      nome: "Cardápio Web",
+      id: "cardapioweb_001",
+      nome: "CardapioWeb",
       plataforma: "outro",
       ativo: false,
-      storeId: process.env.CARDAPIO_WEB_PEDIDOS_URL || process.env.CARDAPIO_WEB_URL || "",
+      storeId: process.env.CARDAPIO_WEB_STORE_ID || "5371",
       apiKey: process.env.CARDAPIO_WEB_TOKEN || "",
-      webhookUrl: `${baseUrl}/api/pedidos`,
+      webhookUrl: `${baseUrl}/api/webhooks/cardapioweb`,
       status: "desconectado"
     }
   ]
