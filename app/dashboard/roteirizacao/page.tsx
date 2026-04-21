@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useMemo, useState } from "react"
+import useSWR from "swr"
 import dynamic from "next/dynamic"
 import { Header } from "@/components/layout/header"
 import { PedidosList } from "@/components/roteirizacao/pedidos-list"
 import { RouteSummary } from "@/components/roteirizacao/route-summary"
-import { mockPedidos, mockEntregadores } from "@/mocks/data"
+import { mockEntregadores } from "@/mocks/data"
 import type { Pedido } from "@/types"
 
 // Dynamic import for map to avoid SSR issues
@@ -21,16 +22,26 @@ const RouteMap = dynamic(
   }
 )
 
+const fetcher = async (url: string) => {
+  const response = await fetch(url, { cache: "no-store" })
+  if (!response.ok) {
+    throw new Error("Falha ao carregar pedidos")
+  }
+  return response.json()
+}
+
 export default function RoteirizacaoPage() {
-  const [pedidos, setPedidos] = useState<Pedido[]>(
-    mockPedidos.filter(p => p.status === "pendente")
-  )
+  const { data } = useSWR("/api/pedidos", fetcher)
+  const pedidosPendentes: Pedido[] = (data?.pedidos ?? []).filter((pedido: Pedido) => pedido.status === "pendente")
+  const [pedidos, setPedidos] = useState<Pedido[]>([])
   const [selectedPedidos, setSelectedPedidos] = useState<string[]>([])
   const [selectedEntregador, setSelectedEntregador] = useState<string | null>(null)
 
+  const pedidosData = pedidos.length > 0 ? pedidos : pedidosPendentes
+
   const selectedPedidosData = useMemo(() => 
-    selectedPedidos.map(id => pedidos.find(p => p.id === id)!).filter(Boolean),
-    [selectedPedidos, pedidos]
+    selectedPedidos.map(id => pedidosData.find(p => p.id === id)!).filter(Boolean),
+    [selectedPedidos, pedidosData]
   )
 
   const handleTogglePedido = (id: string) => {
@@ -77,11 +88,11 @@ export default function RoteirizacaoPage() {
             <div className="bg-white border border-zinc-200 rounded-xl p-4">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-zinc-900">Pedidos Pendentes</h3>
-                <span className="text-sm text-zinc-500">{pedidos.length} pedidos</span>
+                <span className="text-sm text-zinc-500">{pedidosData.length} pedidos</span>
               </div>
               <div className="max-h-[500px] overflow-y-auto pr-2">
                 <PedidosList
-                  pedidos={pedidos}
+                  pedidos={pedidosData}
                   selectedPedidos={selectedPedidos}
                   onTogglePedido={handleTogglePedido}
                   onReorder={handleReorder}
@@ -105,7 +116,7 @@ export default function RoteirizacaoPage() {
               <h3 className="font-semibold text-zinc-900 mb-4">Mapa da Rota</h3>
               <div className="h-[600px]">
                 <RouteMap 
-                  pedidos={pedidos} 
+                  pedidos={pedidosData} 
                   selectedPedidos={selectedPedidos} 
                 />
               </div>

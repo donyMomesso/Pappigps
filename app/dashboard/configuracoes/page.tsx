@@ -14,6 +14,7 @@ import { toast } from "@/hooks/use-toast"
 import { mockConfiguracoes, mockLoja } from "@/mocks/data"
 import { Building2, Clock, Bell, Save, Loader2, MapPin, DollarSign, FileText, Users, Search } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
+import type { Configuracoes, IntegracaoPlataforma, Loja } from "@/types"
 import dynamic from 'next/dynamic'
 
 const LojaMap = dynamic(() => import('@/components/configuracoes/loja-map'), {
@@ -26,24 +27,28 @@ const NOTIFICACOES_STORAGE_KEY = "pappigps_notificacoes"
 const TERMO_STORAGE_KEY = "pappigps_termo_freelancer"
 
 function IntegrationsTab() {
-  const [integrations, setIntegrations] = useState([])
+  const [integrations, setIntegrations] = useState<IntegracaoPlataforma[]>([])
   const [loading, setLoading] = useState(false)
-
-  useEffect(() => {
-    fetchIntegrations()
-  }, [])
 
   const fetchIntegrations = async () => {
     try {
       const response = await fetch('/api/integrations')
-      const data = await response.json()
+      const data: IntegracaoPlataforma[] = await response.json()
       setIntegrations(data)
     } catch (error) {
       console.error('Erro ao carregar integrações:', error)
     }
   }
 
-  const handleUpdateIntegration = async (integration: any) => {
+  useEffect(() => {
+    const loadIntegrations = async () => {
+      await fetchIntegrations()
+    }
+
+    void loadIntegrations()
+  }, [])
+
+  const handleUpdateIntegration = async (integration: IntegracaoPlataforma) => {
     setLoading(true)
     try {
       const response = await fetch('/api/integrations', {
@@ -51,7 +56,7 @@ function IntegrationsTab() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(integration)
       })
-      const updated = await response.json()
+      const updated: IntegracaoPlataforma = await response.json()
       setIntegrations(prev => prev.map(i => i.id === updated.id ? updated : i))
     } catch (error) {
       console.error('Erro ao atualizar integração:', error)
@@ -88,7 +93,7 @@ function IntegrationsTab() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {integrations.map((integration: any) => (
+          {integrations.map((integration) => (
             <Card key={integration.id} className="border-l-4 border-l-blue-500">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-4">
@@ -186,7 +191,7 @@ function IntegrationsTab() {
           <div>
             <h4 className="font-medium mb-2">3. Testar conexão</h4>
             <p className="text-sm text-muted-foreground">
-              Use o botão "Testar Conexão" para verificar se a integração está funcionando.
+              Use o botao de Testar Conexao para verificar se a integracao esta funcionando.
             </p>
           </div>
         </CardContent>
@@ -206,43 +211,30 @@ const diasSemana = [
 ]
 
 export default function ConfiguracoesPage() {
+  const lojaInicial: Loja = typeof window !== "undefined"
+    ? JSON.parse(localStorage.getItem(LOJA_STORAGE_KEY) ?? "null") as Loja ?? mockLoja
+    : mockLoja
+  const notificacoesIniciais: Configuracoes["notificacoes"] = typeof window !== "undefined"
+    ? JSON.parse(localStorage.getItem(NOTIFICACOES_STORAGE_KEY) ?? "null") as Configuracoes["notificacoes"] ?? mockConfiguracoes.notificacoes
+    : mockConfiguracoes.notificacoes
+  const termoInicial = typeof window !== "undefined"
+    ? localStorage.getItem(TERMO_STORAGE_KEY) ?? mockConfiguracoes.termoFreelancer
+    : mockConfiguracoes.termoFreelancer
+
   const [isLoading, setIsLoading] = useState(false)
   const [isSearchingAddress, setIsSearchingAddress] = useState(false)
   const [isSearchingCnpj, setIsSearchingCnpj] = useState(false)
-  const [loja, setLoja] = useState(mockLoja)
-  const [notificacoes, setNotificacoes] = useState(mockConfiguracoes.notificacoes)
-  const [termoFreelancer, setTermoFreelancer] = useState(mockConfiguracoes.termoFreelancer)
-  const [latitudeInput, setLatitudeInput] = useState(String(mockLoja.coordenadas.latitude).replace(".", ","))
-  const [longitudeInput, setLongitudeInput] = useState(String(mockLoja.coordenadas.longitude).replace(".", ","))
+  const [loja, setLoja] = useState<Loja>(lojaInicial)
+  const [notificacoes, setNotificacoes] = useState<Configuracoes["notificacoes"]>(notificacoesIniciais)
+  const [termoFreelancer, setTermoFreelancer] = useState(termoInicial)
+  const [latitudeInput, setLatitudeInput] = useState(lojaInicial.coordenadas.latitude.toFixed(6).replace(".", ","))
+  const [longitudeInput, setLongitudeInput] = useState(lojaInicial.coordenadas.longitude.toFixed(6).replace(".", ","))
 
   const persistirConfiguracoes = (proximaLoja = loja) => {
     localStorage.setItem(LOJA_STORAGE_KEY, JSON.stringify(proximaLoja))
     localStorage.setItem(NOTIFICACOES_STORAGE_KEY, JSON.stringify(notificacoes))
     localStorage.setItem(TERMO_STORAGE_KEY, termoFreelancer)
   }
-
-  useEffect(() => {
-    const lojaSalva = localStorage.getItem(LOJA_STORAGE_KEY)
-    const notificacoesSalvas = localStorage.getItem(NOTIFICACOES_STORAGE_KEY)
-    const termoSalvo = localStorage.getItem(TERMO_STORAGE_KEY)
-
-    if (lojaSalva) {
-      setLoja(JSON.parse(lojaSalva))
-    }
-
-    if (notificacoesSalvas) {
-      setNotificacoes(JSON.parse(notificacoesSalvas))
-    }
-
-    if (termoSalvo) {
-      setTermoFreelancer(termoSalvo)
-    }
-  }, [])
-
-  useEffect(() => {
-    setLatitudeInput(loja.coordenadas.latitude.toFixed(6).replace(".", ","))
-    setLongitudeInput(loja.coordenadas.longitude.toFixed(6).replace(".", ","))
-  }, [loja.coordenadas.latitude, loja.coordenadas.longitude])
 
   const handleSave = async () => {
     setIsLoading(true)
@@ -267,6 +259,8 @@ export default function ConfiguracoesPage() {
   }
 
   const handleCoordenadasChange = (lat: number, lng: number) => {
+    setLatitudeInput(formatarCoordenada(lat))
+    setLongitudeInput(formatarCoordenada(lng))
     setLoja((prev) => ({
       ...prev,
       coordenadas: { latitude: lat, longitude: lng },

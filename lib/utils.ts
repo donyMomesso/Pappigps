@@ -65,7 +65,8 @@ export function getStatusEntregadorLabel(status: StatusEntregador): string {
   const labels: Record<StatusEntregador, string> = {
     disponivel: 'Disponível',
     em_rota: 'Em Rota',
-    offline: 'Offline'
+    offline: 'Offline',
+    pausado: 'Pausado'
   }
   return labels[status]
 }
@@ -74,7 +75,8 @@ export function getStatusEntregadorColor(status: StatusEntregador): string {
   const colors: Record<StatusEntregador, string> = {
     disponivel: 'bg-emerald-100 text-emerald-800',
     em_rota: 'bg-blue-100 text-blue-800',
-    offline: 'bg-zinc-100 text-zinc-600'
+    offline: 'bg-zinc-100 text-zinc-600',
+    pausado: 'bg-amber-100 text-amber-800'
   }
   return colors[status]
 }
@@ -84,7 +86,8 @@ export function getTipoVeiculoLabel(tipo: TipoVeiculo): string {
     moto: 'Moto',
     carro: 'Carro',
     van: 'Van',
-    caminhao: 'Caminhão'
+    caminhao: 'Caminhão',
+    bicicleta: 'Bicicleta'
   }
   return labels[tipo]
 }
