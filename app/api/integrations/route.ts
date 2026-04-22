@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getIntegrations, saveIntegrations } from '@/lib/server/repositories'
-import type { IntegracaoPlataforma } from '@/types'
+import { getConfiguracoes, getIntegrations, saveIntegrations, upsertPedido } from '@/lib/server/repositories'
+import type { IntegracaoPlataforma, Pedido } from '@/types'
 
 function getBaseUrl(request: NextRequest) {
   const configuredUrl = process.env.NEXT_PUBLIC_APP_URL?.trim()
@@ -60,6 +60,104 @@ export async function PATCH(request: NextRequest) {
       integracao.webhookEvents = (integracao.webhookEvents || []).filter((event) => event.tipo !== "erro")
       await saveIntegrations(integracoes)
       return NextResponse.json({ success: true, integration: normalizeIntegration(integracao, request) })
+    }
+
+    if (action === "simulate-webhook") {
+      const configuracoes = await getConfiguracoes()
+      const now = new Date()
+      const testOrderId = `SIM-${now.getTime().toString().slice(-6)}`
+      const pedido: Pedido = {
+        id: `simulado_${testOrderId}`,
+        numero: testOrderId,
+        cliente: {
+          id: "cliente-simulado",
+          nome: "Cliente de Teste",
+          telefone: "(11) 99999-0000",
+          email: "teste@pappi.local",
+          endereco: configuracoes.loja.endereco,
+        },
+        endereco: configuracoes.loja.endereco,
+        valor: 49.9,
+        formaPagamento: "pix",
+        status: "em_preparo",
+        dataCriacao: now,
+        observacoes: "Pedido de simulação da integração CardapioWeb.",
+        volumes: 1,
+        taxaEntrega: {
+          id: `taxa_${testOrderId}`,
+          pedidoId: `simulado_${testOrderId}`,
+          valorBase: 8,
+          valorPorKm: 0,
+          distanciaKm: 0,
+          valorTotal: 8,
+          pago: false,
+        },
+      }
+
+      await upsertPedido(pedido)
+
+      integracao.ativo = true
+      integracao.status = "conectado"
+      integracao.ultimaSincronizacao = now
+      integracao.ultimoPedidoRecebidoEm = now
+      integracao.ultimoPedidoRecebidoId = pedido.numero
+      integracao.ultimoErroWebhook = undefined
+      integracao.ultimoWebhookRecebidoEm = now
+      integracao.ultimoWebhookStatusCode = 200
+      integracao.ultimoWebhookDiagnostico = "Webhook simulado com sucesso pela tela de integrações."
+      integracao.ultimoWebhookContentType = "application/json"
+      integracao.ultimoWebhookMetodoAutenticacao = "simulado_painel"
+      integracao.ultimoWebhookStoreIdRecebido = integracao.storeId || configuracoes.loja.id
+      integracao.ultimoWebhookOrderIdRecebido = pedido.numero
+      integracao.ultimoWebhookPayloadResumo = "event=order.created; origem=simulacao_painel"
+      integracao.webhookEvents = [
+        {
+          id: `${Date.now()}-simulado`,
+          tipo: "pedido_recebido" as const,
+          mensagem: `Webhook simulado com sucesso. Pedido ${pedido.numero} registrado.`,
+          criadoEm: now,
+        },
+        ...(integracao.webhookEvents || []),
+      ].slice(0, 5)
+
+      await saveIntegrations(integracoes)
+
+      return NextResponse.json({
+        success: true,
+        integration: normalizeIntegration(integracao, request),
+        pedido,
+      })
+    }
+
+    if (action === "simulate-webhook-token-error") {
+      const now = new Date()
+
+      integracao.status = "erro"
+      integracao.ultimoErroWebhook = "Token inválido ou ausente no webhook."
+      integracao.ultimoWebhookRecebidoEm = now
+      integracao.ultimoWebhookStatusCode = 401
+      integracao.ultimoWebhookDiagnostico = "Falha na autenticação do webhook."
+      integracao.ultimoWebhookContentType = "application/json"
+      integracao.ultimoWebhookMetodoAutenticacao = "authorization_invalido"
+      integracao.ultimoWebhookStoreIdRecebido = integracao.storeId || undefined
+      integracao.ultimoWebhookOrderIdRecebido = undefined
+      integracao.ultimoWebhookPayloadResumo = "event=order.created; origem=simulacao_erro_token"
+      integracao.webhookEvents = [
+        {
+          id: `${Date.now()}-simulado-erro-token`,
+          tipo: "erro" as const,
+          mensagem: "Simulação de erro: token inválido ou ausente no webhook.",
+          criadoEm: now,
+        },
+        ...(integracao.webhookEvents || []),
+      ].slice(0, 5)
+
+      await saveIntegrations(integracoes)
+
+      return NextResponse.json({
+        success: true,
+        integration: normalizeIntegration(integracao, request),
+      })
     }
 
     return NextResponse.json({ error: "Ação inválida" }, { status: 400 })

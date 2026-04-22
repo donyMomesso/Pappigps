@@ -130,6 +130,68 @@ function IntegrationsTab() {
     }
   }
 
+  const handleSimulateWebhook = async (id: string) => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/integrations', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action: 'simulate-webhook' }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Falha ao simular webhook')
+      }
+
+      const result = await response.json()
+      setIntegrations((prev) => prev.map((item) => (item.id === id ? result.integration : item)))
+      toast({
+        title: "Webhook simulado",
+        description: `Pedido ${result.pedido?.numero || "de teste"} processado com sucesso.`,
+      })
+    } catch (error) {
+      console.error('Erro ao simular webhook:', error)
+      toast({
+        title: "Não foi possível simular",
+        description: "Tente novamente em instantes.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSimulateWebhookTokenError = async (id: string) => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/integrations', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action: 'simulate-webhook-token-error' }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Falha ao simular erro de token')
+      }
+
+      const result = await response.json()
+      setIntegrations((prev) => prev.map((item) => (item.id === id ? result.integration : item)))
+      toast({
+        title: "Erro de token simulado",
+        description: "O painel foi atualizado com um cenário de falha de autenticação.",
+      })
+    } catch (error) {
+      console.error('Erro ao simular erro de token:', error)
+      toast({
+        title: "Não foi possível simular",
+        description: "Tente novamente em instantes.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
 
   const fetchIntegrations = async () => {
     try {
@@ -278,6 +340,28 @@ function IntegrationsTab() {
                     >
                       <Copy className="mr-2 h-4 w-4" />
                       Copiar
+                    </Button>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void handleSimulateWebhook(integration.id)}
+                      disabled={loading}
+                    >
+                      <FlaskConical className="mr-2 h-4 w-4" />
+                      Simular sucesso
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void handleSimulateWebhookTokenError(integration.id)}
+                      disabled={loading}
+                    >
+                      <AlertTriangle className="mr-2 h-4 w-4" />
+                      Simular erro de token
                     </Button>
                   </div>
                 </div>
