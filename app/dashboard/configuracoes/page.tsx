@@ -60,10 +60,22 @@ function IntegrationsTab() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(integration)
       })
+      if (!response.ok) {
+        throw new Error('Falha ao salvar integração')
+      }
       const updated: IntegracaoPlataforma = await response.json()
       setIntegrations(prev => prev.map(i => i.id === updated.id ? updated : i))
+      toast({
+        title: "Integração salva",
+        description: `${updated.nome} foi atualizada com sucesso.`,
+      })
     } catch (error) {
       console.error('Erro ao atualizar integração:', error)
+      toast({
+        title: "Erro ao salvar integração",
+        description: "Não foi possível salvar os dados da integração.",
+        variant: "destructive"
+      })
     } finally {
       setLoading(false)
     }
@@ -77,11 +89,23 @@ function IntegrationsTab() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
       })
+      if (!response.ok) {
+        throw new Error('Falha ao testar conexão')
+      }
       const result = await response.json()
-      alert(result.message)
-      fetchIntegrations()
+      toast({
+        title: result.success ? "Conexão validada" : "Conexão com erro",
+        description: result.message,
+        variant: result.success ? "default" : "destructive"
+      })
+      await fetchIntegrations()
     } catch (error) {
       console.error('Erro ao testar conexão:', error)
+      toast({
+        title: "Erro no teste",
+        description: "Não foi possível testar a integração agora.",
+        variant: "destructive"
+      })
     } finally {
       setLoading(false)
     }
@@ -100,14 +124,14 @@ function IntegrationsTab() {
           {integrations.map((integration) => (
             <Card key={integration.id} className="border-l-4 border-l-blue-500">
               <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3">
                     <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                       <FileText className="w-5 h-5 text-blue-600" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <h3 className="font-medium">{integration.nome}</h3>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="break-all text-sm text-muted-foreground">
                         Webhook: {integration.webhookUrl}
                       </p>
                     </div>
@@ -117,7 +141,7 @@ function IntegrationsTab() {
                   </Badge>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-4 mb-4">
+                <div className="mb-4 grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Store ID</Label>
                     <Input
@@ -141,7 +165,7 @@ function IntegrationsTab() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={integration.ativo}
@@ -151,7 +175,7 @@ function IntegrationsTab() {
                     />
                     <Label>Ativo</Label>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row">
                     <Button
                       variant="outline"
                       size="sm"
@@ -237,7 +261,13 @@ export default function ConfiguracoesPage() {
     )
   }
 
-  return <ConfiguracoesEditor initialData={data} mutate={mutate} />
+  return (
+    <ConfiguracoesEditor
+      key={JSON.stringify(data)}
+      initialData={data}
+      mutate={mutate}
+    />
+  )
 }
 
 function ConfiguracoesEditor({
@@ -558,14 +588,14 @@ function ConfiguracoesEditor({
   return (
     <>
       <Header title="Configurações" />
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-foreground">Configurações do Sistema</h2>
           <p className="text-sm text-muted-foreground">Gerencie as configurações da sua empresa, operação e entregadores</p>
         </div>
 
         <Tabs defaultValue="empresa" className="space-y-6">
-          <TabsList className="bg-background border">
+          <TabsList className="h-auto w-full justify-start gap-2 overflow-x-auto border bg-background p-1">
             <TabsTrigger value="empresa" className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-700">
               <Building2 className="w-4 h-4 mr-2" />
               Empresa
@@ -611,7 +641,7 @@ function ConfiguracoesEditor({
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="cnpj">CNPJ</Label>
-                    <div className="flex gap-3">
+                    <div className="flex flex-col gap-3 sm:flex-row">
                       <Input 
                         id="cnpj" 
                         value={loja.cnpj}
@@ -644,7 +674,7 @@ function ConfiguracoesEditor({
                       </Button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="telefone">Telefone</Label>
                       <Input 
@@ -672,8 +702,8 @@ function ConfiguracoesEditor({
                   <CardDescription>Endereço físico e coordenadas GPS da loja</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-2 col-span-2">
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="space-y-2 md:col-span-2">
                       <Label htmlFor="logradouro">Logradouro</Label>
                       <Input 
                         id="logradouro" 
@@ -690,7 +720,7 @@ function ConfiguracoesEditor({
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-4 gap-4">
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <div className="space-y-2">
                       <Label htmlFor="bairro">Bairro</Label>
                       <Input 
@@ -791,7 +821,7 @@ function ConfiguracoesEditor({
                   </div>
 
                   <div className="pt-4 border-t">
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <Label className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-emerald-600" />
                         Coordenadas GPS
@@ -800,7 +830,7 @@ function ConfiguracoesEditor({
                         Ponto de partida das rotas
                       </Badge>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="latitude">Latitude</Label>
                         <Input 
@@ -862,7 +892,7 @@ function ConfiguracoesEditor({
                   {diasSemana.map(({ key, label }) => {
                     const horario = loja.horarioOperacao[key as keyof typeof loja.horarioOperacao]
                     return (
-                      <div key={key} className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                      <div key={key} className="flex flex-col gap-4 rounded-lg bg-muted p-4 xl:flex-row xl:items-center xl:justify-between">
                         <div className="flex items-center gap-4">
                           <Switch 
                             checked={horario.ativo}
@@ -879,7 +909,7 @@ function ConfiguracoesEditor({
                           </span>
                         </div>
                         {horario.ativo ? (
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                             <Input 
                               type="time"
                               className="w-32"
@@ -919,7 +949,7 @@ function ConfiguracoesEditor({
 
           {/* Taxas Tab */}
           <TabsContent value="taxas">
-            <div className="grid lg:grid-cols-2 gap-6">
+            <div className="grid gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Taxas de Entrega</CardTitle>

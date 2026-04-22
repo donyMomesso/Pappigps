@@ -1,20 +1,21 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { mockLoja } from "@/mocks/data"
-import type { Pedido } from "@/types"
+import type { Loja, Pedido } from "@/types"
 
 interface RouteMapProps {
+  loja: Loja
   pedidos: Pedido[]
   selectedPedidos: string[]
 }
 
-export function RouteMap({ pedidos, selectedPedidos }: RouteMapProps) {
+export function RouteMap({ loja, pedidos, selectedPedidos }: RouteMapProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
 
   useEffect(() => {
     if (typeof window === "undefined" || !mapRef.current) return
+    const mapElement = mapRef.current
 
     // Dynamically import Leaflet to avoid SSR issues
     const initMap = async () => {
@@ -27,8 +28,8 @@ export function RouteMap({ pedidos, selectedPedidos }: RouteMapProps) {
       }
 
       // Initialize map centered on the store location
-      const map = L.map(mapRef.current!, {
-        center: [mockLoja.coordenadas.latitude, mockLoja.coordenadas.longitude],
+      const map = L.map(mapElement, {
+        center: [loja.coordenadas.latitude, loja.coordenadas.longitude],
         zoom: 13,
       })
 
@@ -44,9 +45,9 @@ export function RouteMap({ pedidos, selectedPedidos }: RouteMapProps) {
         iconAnchor: [20, 20],
       })
 
-      L.marker([mockLoja.coordenadas.latitude, mockLoja.coordenadas.longitude], { icon: storeIcon })
+      L.marker([loja.coordenadas.latitude, loja.coordenadas.longitude], { icon: storeIcon })
         .addTo(map)
-        .bindPopup(`<div style="font-family: system-ui; min-width: 150px;"><strong>${mockLoja.nome}</strong><br/><small>PONTO DE ORIGEM</small><br/><small>${mockLoja.endereco.logradouro}, ${mockLoja.endereco.numero}</small></div>`)
+        .bindPopup(`<div style="font-family: system-ui; min-width: 150px;"><strong>${loja.nome}</strong><br/><small>PONTO DE ORIGEM</small><br/><small>${loja.endereco.logradouro}, ${loja.endereco.numero}</small></div>`)
 
       // Add markers for pedidos
       pedidos.forEach((pedido, index) => {
@@ -72,7 +73,7 @@ const markerHtml = `<div style="width: 32px; height: 32px; border-radius: 50%; b
       if (selectedPedidos.length > 0) {
         // Start route from store location
         const routeCoords: [number, number][] = [
-          [mockLoja.coordenadas.latitude, mockLoja.coordenadas.longitude]
+          [loja.coordenadas.latitude, loja.coordenadas.longitude]
         ]
 
         // Add selected delivery points
@@ -105,7 +106,7 @@ const markerHtml = `<div style="width: 32px; height: 32px; border-radius: 50%; b
         mapInstanceRef.current = null
       }
     }
-  }, [pedidos, selectedPedidos])
+  }, [loja, pedidos, selectedPedidos])
 
   return (
     <div

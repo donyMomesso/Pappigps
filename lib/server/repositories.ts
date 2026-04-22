@@ -1,7 +1,7 @@
 import "server-only"
 
-import { mockConfiguracoes, mockEntregadores, mockLoja, mockRotas } from "@/mocks/data"
-import type { Configuracoes, Entregador, IntegracaoPlataforma, Loja, Rota } from "@/types"
+import { mockConfiguracoes, mockEntregadores, mockLoja, mockPedidos, mockRotas } from "@/mocks/data"
+import type { Configuracoes, Entregador, IntegracaoPlataforma, Loja, Pedido, Rota } from "@/types"
 import { getDefaultIntegrations } from "@/lib/integrations/default-integrations"
 import { readOrCreateStore, updateStore, writeStore } from "@/lib/server/store"
 
@@ -9,6 +9,7 @@ const ENTREGADORES_FILE = "entregadores.json"
 const ROTAS_FILE = "rotas.json"
 const CONFIG_FILE = "configuracoes.json"
 const INTEGRATIONS_FILE = "integrations.json"
+const PEDIDOS_FILE = "pedidos.json"
 
 export async function getEntregadores() {
   return readOrCreateStore<Entregador[]>(ENTREGADORES_FILE, mockEntregadores)
@@ -76,6 +77,37 @@ export async function getIntegrations() {
 
 export async function saveIntegrations(integrations: IntegracaoPlataforma[]) {
   await writeStore(INTEGRATIONS_FILE, integrations)
+}
+
+export async function getPedidosStore() {
+  return readOrCreateStore<Pedido[]>(PEDIDOS_FILE, [])
+}
+
+export async function savePedidosStore(pedidos: Pedido[]) {
+  await writeStore(PEDIDOS_FILE, pedidos)
+}
+
+export async function upsertPedido(pedido: Pedido) {
+  return updateStore<Pedido[]>(PEDIDOS_FILE, [], (current) => {
+    const existingIndex = current.findIndex(
+      (item) => item.id === pedido.id || item.numero === pedido.numero
+    )
+
+    if (existingIndex >= 0) {
+      const next = [...current]
+      next[existingIndex] = {
+        ...next[existingIndex],
+        ...pedido,
+      }
+      return next
+    }
+
+    return [pedido, ...current]
+  })
+}
+
+export async function getPedidosSeed() {
+  return mockPedidos
 }
 
 export function getDefaultLoja(): Loja {

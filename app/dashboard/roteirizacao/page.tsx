@@ -6,8 +6,7 @@ import dynamic from "next/dynamic"
 import { Header } from "@/components/layout/header"
 import { PedidosList } from "@/components/roteirizacao/pedidos-list"
 import { RouteSummary } from "@/components/roteirizacao/route-summary"
-import { mockEntregadores } from "@/mocks/data"
-import type { Pedido } from "@/types"
+import type { Configuracoes, Entregador, Loja, Pedido } from "@/types"
 
 // Dynamic import for map to avoid SSR issues
 const RouteMap = dynamic(
@@ -32,10 +31,45 @@ const fetcher = async (url: string) => {
 
 export default function RoteirizacaoPage() {
   const { data } = useSWR("/api/pedidos", fetcher)
+  const { data: entregadoresData } = useSWR<Entregador[]>("/api/entregadores", fetcher)
+  const { data: configuracoes } = useSWR<Configuracoes>("/api/configuracoes", fetcher)
   const pedidosPendentes: Pedido[] = (data?.pedidos ?? []).filter((pedido: Pedido) => pedido.status === "pendente")
+  const entregadores = entregadoresData ?? []
   const [pedidos, setPedidos] = useState<Pedido[]>([])
   const [selectedPedidos, setSelectedPedidos] = useState<string[]>([])
   const [selectedEntregador, setSelectedEntregador] = useState<string | null>(null)
+
+  const fallbackLoja: Loja = {
+    id: "fallback",
+    nome: "Loja",
+    cnpj: "",
+    telefone: "",
+    email: "",
+    endereco: {
+      logradouro: "",
+      numero: "",
+      bairro: "",
+      cidade: "",
+      uf: "",
+      cep: "",
+      latitude: -23.5489,
+      longitude: -46.6388,
+    },
+    coordenadas: { latitude: -23.5489, longitude: -46.6388 },
+    horarioOperacao: {
+      domingo: { abertura: "00:00", fechamento: "00:00", ativo: false },
+      segunda: { abertura: "08:00", fechamento: "18:00", ativo: true },
+      terca: { abertura: "08:00", fechamento: "18:00", ativo: true },
+      quarta: { abertura: "08:00", fechamento: "18:00", ativo: true },
+      quinta: { abertura: "08:00", fechamento: "18:00", ativo: true },
+      sexta: { abertura: "08:00", fechamento: "18:00", ativo: true },
+      sabado: { abertura: "08:00", fechamento: "12:00", ativo: false },
+    },
+    raioEntregaKm: 10,
+    taxaEntregaBase: 0,
+    taxaPorKm: 0,
+    diariaEntregador: 0,
+  }
 
   const pedidosData = pedidos.length > 0 ? pedidos : pedidosPendentes
 
@@ -99,7 +133,7 @@ export default function RoteirizacaoPage() {
   return (
     <>
       <Header title="Roteirização" />
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-zinc-900">Criar Nova Rota</h2>
           <p className="text-sm text-zinc-500">
@@ -111,7 +145,7 @@ export default function RoteirizacaoPage() {
           {/* Pedidos List */}
           <div className="lg:col-span-1 space-y-4">
             <div className="bg-white border border-zinc-200 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <h3 className="font-semibold text-zinc-900">Pedidos Pendentes</h3>
                 <span className="text-sm text-zinc-500">{pedidosData.length} pedidos</span>
               </div>
@@ -127,7 +161,7 @@ export default function RoteirizacaoPage() {
 
             <RouteSummary
               selectedPedidos={selectedPedidosData}
-              entregadores={mockEntregadores}
+              entregadores={entregadores}
               selectedEntregador={selectedEntregador}
               onEntregadorChange={setSelectedEntregador}
               onOptimize={handleOptimize}
@@ -139,8 +173,9 @@ export default function RoteirizacaoPage() {
           <div className="lg:col-span-2">
             <div className="bg-white border border-zinc-200 rounded-xl p-4 h-full">
               <h3 className="font-semibold text-zinc-900 mb-4">Mapa da Rota</h3>
-              <div className="h-[600px]">
+              <div className="h-[420px] md:h-[520px] xl:h-[600px]">
                 <RouteMap 
+                  loja={configuracoes?.loja ?? fallbackLoja}
                   pedidos={pedidosData} 
                   selectedPedidos={selectedPedidos} 
                 />

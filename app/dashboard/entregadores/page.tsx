@@ -44,15 +44,15 @@ export default function EntregadoresPage() {
   return (
     <>
       <Header title="Entregadores" />
-      <div className="p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="p-4 sm:p-6">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-zinc-900">Gerenciar Entregadores</h2>
             <p className="text-sm text-zinc-500">{entregadores.length} entregadores cadastrados</p>
           </div>
           <Button 
             onClick={() => setIsModalOpen(true)}
-            className="bg-emerald-600 hover:bg-emerald-700"
+            className="bg-emerald-600 hover:bg-emerald-700 sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />
             Novo Entregador
@@ -61,7 +61,7 @@ export default function EntregadoresPage() {
 
         {/* Filters */}
         <div className="bg-white rounded-xl border border-zinc-200 p-4 mb-6">
-          <div className="flex flex-col md:flex-row md:items-center gap-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
               <Input
@@ -71,7 +71,7 @@ export default function EntregadoresPage() {
                 className="pl-9"
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {statusOptions.map((option) => (
                 <Button
                   key={option.value}

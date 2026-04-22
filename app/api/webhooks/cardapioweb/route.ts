@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { upsertPedido } from '@/lib/server/repositories'
 import type { Pedido } from '@/types'
 
 // Simulação de validação de webhook CardapioWeb
@@ -12,8 +13,45 @@ function validateCardapioWebWebhook(request: NextRequest): boolean {
          request.headers.get('x-api-key') === expectedToken
 }
 
-// Simulação de processamento de pedido CardapioWeb
-function processCardapioWebOrder(orderData: any): Pedido {
+function extractOrderPayload(payload: any) {
+  return payload?.pedido || payload?.order || payload?.data?.pedido || payload?.data?.order || payload
+}
+
+function parseNumber(value: unknown, fallback = 0) {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string') {
+    const normalized = value.replace(/[^\d,.-]/g, '').replace(',', '.')
+    const parsed = Number(normalized)
+    return Number.isFinite(parsed) ? parsed : fallback
+  }
+  return fallback
+}
+
+function mapFormaPagamento(value: unknown): Pedido["formaPagamento"] {
+  const normalized = String(value ?? '').toLowerCase()
+
+  if (normalized.includes('pix')) return 'pix'
+  if (normalized.includes('boleto')) return 'boleto'
+  if (normalized.includes('cart')) return 'cartao'
+  return 'dinheiro'
+}
+
+function mapStatus(value: unknown): Pedido["status"] {
+  const normalized = String(value ?? '').toLowerCase()
+
+  if (normalized.includes('rota') || normalized.includes('dispatch') || normalized.includes('delivery')) {
+    return 'em_rota'
+  }
+  if (normalized.includes('cancel')) return 'cancelado'
+  if (normalized.includes('entreg') || normalized.includes('delivered') || normalized.includes('final')) {
+    return 'entregue'
+  }
+  return 'pendente'
+}
+
+function processCardapioWebOrder(orderPayload: any): Pedido {
+  const orderData = extractOrderPayload(orderPayload)
+
   // Estrutura típica do CardapioWeb
   const enderecoEntrega = {
     logradouro: orderData.delivery?.address?.street || orderData.endereco?.rua || '',
@@ -40,13 +78,13 @@ function processCardapioWebOrder(orderData: any): Pedido {
       endereco: enderecoEntrega
     },
     endereco: enderecoEntrega,
-    valor: orderData.total || orderData.totalValue || orderData.valor || 0,
-    formaPagamento: orderData.payment?.method || orderData.formaPagamento || 'dinheiro',
-    status: 'pendente',
+    valor: parseNumber(orderData.total || orderData.totalValue || orderData.valor || 0),
+    formaPagamento: mapFormaPagamento(orderData.payment?.method || orderData.formaPagamento),
+    status: mapStatus(orderData.status || orderData.situacao || orderPayload?.event),
     dataCriacao: orderData.createdAt ? new Date(orderData.createdAt) : new Date(),
     dataEntrega: orderData.deliveryTime ? new Date(orderData.deliveryTime) : undefined,
     observacoes: orderData.notes || orderData.observacoes || '',
-    peso: orderData.weight || orderData.peso,
+    peso: orderData.weight || orderData.peso ? parseNumber(orderData.weight || orderData.peso) : undefined,
     volumes: orderData.items?.length || 1,
     rotaId: undefined,
     entregadorId: undefined,
@@ -54,10 +92,10 @@ function processCardapioWebOrder(orderData: any): Pedido {
     taxaEntrega: {
       id: `taxa_${orderId}`,
       pedidoId: `cardapioweb_${orderId}`,
-      valorBase: orderData.deliveryFee || orderData.taxaEntrega || 0,
+      valorBase: parseNumber(orderData.deliveryFee || orderData.taxaEntrega || 0),
       valorPorKm: 0,
       distanciaKm: 0,
-      valorTotal: orderData.deliveryFee || orderData.taxaEntrega || 0,
+      valorTotal: parseNumber(orderData.deliveryFee || orderData.taxaEntrega || 0),
       pago: false
     }
   }
@@ -108,8 +146,19 @@ export async function POST(request: NextRequest) {
 
     // Parse do corpo da requisição
     const orderData = await parseWebhookBody(request)
-    const orderId = orderData.id || orderData.orderId || orderData.numero || orderData.number || orderData.orderNumber
-    const storeId = orderData.storeId || orderData.lojaId || orderData.restaurantId || orderData.store_id || orderData.restaurant_id
+    const orderPayload = extractOrderPayload(orderData)
+    const orderId =
+      orderPayload.id ||
+      orderPayload.orderId ||
+      orderPayload.numero ||
+      orderPayload.number ||
+      orderPayload.orderNumber
+    const storeId =
+      orderPayload.storeId ||
+      orderPayload.lojaId ||
+      orderPayload.restaurantId ||
+      orderPayload.store_id ||
+      orderPayload.restaurant_id
 
     // Validar dados obrigatórios
     if (!orderId) {
@@ -131,9 +180,8 @@ export async function POST(request: NextRequest) {
 
     // Processar pedido
     const pedido = processCardapioWebOrder(orderData)
+    await upsertPedido(pedido)
 
-    // Em ambiente de servidor, não há localStorage.
-    // Aqui apenas registramos o pedido para debug.
     console.log('Pedido CardapioWeb recebido:', {
       pedido: pedido.numero,
       cliente: pedido.cliente.nome,

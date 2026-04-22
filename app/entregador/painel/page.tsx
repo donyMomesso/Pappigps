@@ -102,7 +102,7 @@ export default function EntregadorPainelPage() {
       {/* Status Card */}
       <Card className="border-emerald-200 bg-gradient-to-r from-emerald-50 to-emerald-100">
         <CardContent className="p-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm text-emerald-700">Status atual</p>
               <p className="text-lg font-semibold text-emerald-800 capitalize">
@@ -160,7 +160,7 @@ export default function EntregadorPainelPage() {
       </Card>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -227,12 +227,12 @@ export default function EntregadorPainelPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-            <div>
+          <div className="flex flex-col gap-3 rounded-lg bg-muted p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
               <p className="font-medium text-foreground">{loja?.nome}</p>
-              <p className="text-sm text-muted-foreground">{loja?.endereco.logradouro}, {loja?.endereco.numero}</p>
+              <p className="truncate text-sm text-muted-foreground">{loja?.endereco.logradouro}, {loja?.endereco.numero}</p>
             </div>
-            <div className="text-right">
+            <div className="text-left sm:text-right">
               <p className="font-medium text-emerald-600">{loja?.horarioOperacao.segunda.abertura} - {loja?.horarioOperacao.segunda.fechamento}</p>
               <Badge variant="outline" className="text-green-600 border-green-600">Aberto</Badge>
             </div>
@@ -256,7 +256,7 @@ export default function EntregadorPainelPage() {
             entregasAtivas.map((pedido) => (
               <div 
                 key={pedido.id}
-                className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                className="flex flex-col gap-3 rounded-lg bg-muted p-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
@@ -269,7 +269,7 @@ export default function EntregadorPainelPage() {
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-left sm:text-right">
                   <p className="text-sm font-medium text-emerald-600">
                     {formatCurrency(pedido.taxaEntrega?.valorTotal || 0)}
                   </p>

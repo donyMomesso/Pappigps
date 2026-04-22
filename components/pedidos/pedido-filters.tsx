@@ -29,7 +29,7 @@ export function PedidoFilters({
 }: PedidoFiltersProps) {
   return (
     <div className="bg-white rounded-xl border border-zinc-200 p-4 mb-4">
-      <div className="flex flex-col md:flex-row md:items-center gap-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center">
         {/* Search */}
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
@@ -42,7 +42,7 @@ export function PedidoFilters({
         </div>
 
         {/* Status Filter */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 md:flex-wrap md:overflow-visible md:pb-0">
           {statusOptions.map((option) => (
             <Button
               key={option.value}

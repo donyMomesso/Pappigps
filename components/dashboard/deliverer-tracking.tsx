@@ -40,7 +40,7 @@ export function DelivererTracking() {
               const localizacao = entregador.localizacaoAtual
 
               return (
-                <div key={entregador.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div key={entregador.id} className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                       <MapPin className="w-4 h-4 text-blue-600" />
@@ -52,7 +52,7 @@ export function DelivererTracking() {
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-left sm:text-right">
                     <Badge variant={localizacao ? "default" : "secondary"} className="text-xs">
                       {localizacao ? "Online" : "Localização indisponível"}
                     </Badge>

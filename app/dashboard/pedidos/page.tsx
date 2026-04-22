@@ -36,8 +36,8 @@ export default function PedidosPage() {
   return (
     <>
       <Header title="Pedidos" />
-      <div className="p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="p-4 sm:p-6">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-zinc-900">Gerenciar Pedidos</h2>
             <p className="text-sm text-zinc-500">
@@ -46,7 +46,7 @@ export default function PedidosPage() {
           </div>
           <Button 
             onClick={() => setIsModalOpen(true)}
-            className="bg-emerald-600 hover:bg-emerald-700"
+            className="bg-emerald-600 hover:bg-emerald-700 sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />
             Novo Pedido

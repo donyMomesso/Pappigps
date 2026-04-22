@@ -103,7 +103,7 @@ export default function EntregasPage() {
       </Card>
 
       <Tabs defaultValue="ativas" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid h-auto w-full grid-cols-2">
           <TabsTrigger value="ativas" className="flex items-center gap-2">
             <Package className="w-4 h-4" />
             Ativas ({entregasAtivas.length})
@@ -172,7 +172,7 @@ export default function EntregasPage() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-3">
+                    <div className="grid gap-3 sm:grid-cols-3">
                         <div className="p-2 bg-muted rounded-lg text-center">
                           <p className="text-xs text-muted-foreground">Valor</p>
                           <p className="font-semibold text-foreground">{formatCurrency(pedido.valor)}</p>
@@ -200,7 +200,7 @@ export default function EntregasPage() {
                       )}
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-2 sm:flex-row">
                       <Button 
                         variant="outline" 
                         className="flex-1"
@@ -243,7 +243,7 @@ export default function EntregasPage() {
             entregasConcluidas.map((pedido) => (
               <Card key={pedido.id} className="opacity-80">
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
                         <CheckCircle2 className="w-5 h-5 text-green-600" />
@@ -253,7 +253,7 @@ export default function EntregasPage() {
                         <p className="text-sm text-muted-foreground">{pedido.cliente.nome}</p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-left sm:text-right">
                       <p className="font-semibold text-emerald-600">
                         +{formatCurrency(pedido.taxaEntrega?.valorTotal || 0)}
                       </p>

@@ -15,7 +15,7 @@ export function ActiveRoutes({ rotas }: ActiveRoutesProps) {
 
   return (
     <div className="bg-white rounded-xl border border-zinc-200">
-      <div className="flex items-center justify-between p-6 border-b border-zinc-100">
+      <div className="flex flex-col gap-3 border-b border-zinc-100 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <h3 className="font-semibold text-zinc-900">Rotas Ativas</h3>
         <Link href="/dashboard/roteirizacao">
           <Button variant="ghost" size="sm" className="text-emerald-600 hover:text-emerald-700">
@@ -36,8 +36,8 @@ export function ActiveRoutes({ rotas }: ActiveRoutesProps) {
               href={`/dashboard/roteirizacao/${rota.id}`}
               className="block p-4 hover:bg-zinc-50"
             >
-              <div className="flex items-start justify-between mb-3">
-                <div>
+              <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
                   <p className="font-medium text-zinc-900">{rota.nome}</p>
                   {rota.entregador && (
                     <p className="text-sm text-zinc-500">
@@ -53,7 +53,7 @@ export function ActiveRoutes({ rotas }: ActiveRoutesProps) {
                   {rota.status === 'em_andamento' ? 'Em Andamento' : 'Planejada'}
                 </span>
               </div>
-              <div className="flex items-center gap-4 text-sm text-zinc-500">
+              <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-500">
                 <span className="flex items-center gap-1">
                   <Package className="w-4 h-4" />
                   {rota.pedidos.length} pedidos

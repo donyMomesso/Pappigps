@@ -23,10 +23,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Atualizar dados
-    integracao.storeId = storeId || integracao.storeId
-    integracao.apiKey = apiKey || integracao.apiKey
-    integracao.ativo = ativo !== undefined ? ativo : integracao.ativo
+    // Atualizar dados mantendo exatamente o que foi digitado
+    if (typeof storeId === 'string') {
+      integracao.storeId = storeId.trim()
+    }
+    if (typeof apiKey === 'string') {
+      integracao.apiKey = apiKey.trim()
+    }
+    if (typeof ativo === 'boolean') {
+      integracao.ativo = ativo
+    }
 
     // Simular teste de conexão
     if (integracao.ativo && integracao.storeId && integracao.apiKey) {
@@ -65,7 +71,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Simular teste de conexão
-    const testSuccess = integracao.storeId && integracao.apiKey
+    const testSuccess = Boolean(integracao.storeId?.trim() && integracao.apiKey?.trim())
 
     integracao.status = testSuccess ? 'conectado' : 'erro'
     integracao.ultimaSincronizacao = testSuccess ? new Date() : undefined

@@ -1,4 +1,5 @@
 import { mockPedidos } from "@/mocks/data"
+import { getPedidosStore } from "@/lib/server/repositories"
 import type { Endereco, FormaPagamento, Pedido, StatusPedido } from "@/types"
 
 type UnknownRecord = Record<string, any>
@@ -157,6 +158,15 @@ export async function getPedidos() {
     }
   } catch (error) {
     console.error("Erro ao carregar pedidos externos:", error)
+  }
+
+  try {
+    const pedidosPersistidos = await getPedidosStore()
+    if (pedidosPersistidos.length > 0) {
+      return { pedidos: pedidosPersistidos, source: "webhook" as const }
+    }
+  } catch (error) {
+    console.error("Erro ao carregar pedidos persistidos:", error)
   }
 
   return { pedidos: mockPedidos, source: "mock" as const }

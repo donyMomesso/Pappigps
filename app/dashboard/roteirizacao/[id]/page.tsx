@@ -7,7 +7,7 @@ import Link from "next/link"
 import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, MapPin, Clock, Package, User, Phone, CheckCircle, Circle } from "lucide-react"
-import type { Rota } from "@/types"
+import type { Configuracoes, Loja, Rota } from "@/types"
 import { cn, formatCurrency, formatDistance, formatDuration, formatDateTime, getTipoVeiculoLabel, getStatusPedidoLabel, getStatusPedidoColor } from "@/lib/utils"
 
 const RouteMap = dynamic(
@@ -33,7 +33,39 @@ const fetcher = async (url: string) => {
 export default function RotaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const { data } = useSWR("/api/rotas", fetcher)
+  const { data: configuracoes } = useSWR<Configuracoes>("/api/configuracoes", fetcher)
   const rota = (data as Rota[] | undefined)?.find(r => r.id === id)
+  const fallbackLoja: Loja = {
+    id: "fallback",
+    nome: "Loja",
+    cnpj: "",
+    telefone: "",
+    email: "",
+    endereco: {
+      logradouro: "",
+      numero: "",
+      bairro: "",
+      cidade: "",
+      uf: "",
+      cep: "",
+      latitude: -23.5489,
+      longitude: -46.6388,
+    },
+    coordenadas: { latitude: -23.5489, longitude: -46.6388 },
+    horarioOperacao: {
+      domingo: { abertura: "00:00", fechamento: "00:00", ativo: false },
+      segunda: { abertura: "08:00", fechamento: "18:00", ativo: true },
+      terca: { abertura: "08:00", fechamento: "18:00", ativo: true },
+      quarta: { abertura: "08:00", fechamento: "18:00", ativo: true },
+      quinta: { abertura: "08:00", fechamento: "18:00", ativo: true },
+      sexta: { abertura: "08:00", fechamento: "18:00", ativo: true },
+      sabado: { abertura: "08:00", fechamento: "12:00", ativo: false },
+    },
+    raioEntregaKm: 10,
+    taxaEntregaBase: 0,
+    taxaPorKm: 0,
+    diariaEntregador: 0,
+  }
 
   if (!rota) {
     return (
@@ -201,6 +233,7 @@ export default function RotaDetalhePage({ params }: { params: Promise<{ id: stri
               <h3 className="font-semibold text-zinc-900 mb-4">Mapa da Rota</h3>
               <div className="h-[600px]">
                 <RouteMap 
+                  loja={configuracoes?.loja ?? fallbackLoja}
                   pedidos={rota.pedidos} 
                   selectedPedidos={rota.pedidos.map(p => p.id)} 
                 />

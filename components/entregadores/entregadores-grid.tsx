@@ -25,19 +25,19 @@ export function EntregadoresGrid({ entregadores }: EntregadoresGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
       {entregadores.map((entregador) => (
         <div 
           key={entregador.id} 
           className="bg-white border border-zinc-200 rounded-xl p-5 hover:shadow-md transition-shadow"
         >
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-700 font-semibold text-lg">
                 {entregador.nome.charAt(0)}
               </div>
-              <div>
-                <h3 className="font-semibold text-zinc-900">{entregador.nome}</h3>
+              <div className="min-w-0">
+                <h3 className="truncate font-semibold text-zinc-900">{entregador.nome}</h3>
                 <span className={cn(
                   "px-2 py-0.5 rounded-full text-xs font-medium",
                   getStatusEntregadorColor(entregador.status)
@@ -77,7 +77,7 @@ export function EntregadoresGrid({ entregadores }: EntregadoresGridProps) {
             {entregador.email && (
               <div className="flex items-center gap-2 text-sm text-zinc-600">
                 <Mail className="w-4 h-4 text-zinc-400" />
-                {entregador.email}
+                <span className="truncate">{entregador.email}</span>
               </div>
             )}
           </div>
