@@ -32,13 +32,31 @@ function appendWebhookEvent(
   integration.webhookEvents = nextEvents.slice(0, 5)
 }
 
-function validateCardapioWebWebhook(request: NextRequest, expectedToken: string): boolean {
+function detectAuthMethod(request: NextRequest, expectedToken: string) {
   const authHeader = request.headers.get('authorization')
+  const apiKeyHeader = request.headers.get('x-api-key')
 
-  // CardapioWeb pode usar diferentes formatos de autenticação
-  return authHeader === `Bearer ${expectedToken}` ||
-         authHeader === `Token ${expectedToken}` ||
-         request.headers.get('x-api-key') === expectedToken
+  if (authHeader === `Bearer ${expectedToken}`) {
+    return { valid: true, method: 'authorization_bearer' }
+  }
+
+  if (authHeader === `Token ${expectedToken}`) {
+    return { valid: true, method: 'authorization_token' }
+  }
+
+  if (apiKeyHeader === expectedToken) {
+    return { valid: true, method: 'x-api-key' }
+  }
+
+  if (authHeader) {
+    return { valid: false, method: 'authorization_invalido' }
+  }
+
+  if (apiKeyHeader) {
+    return { valid: false, method: 'x-api-key_invalido' }
+  }
+
+  return { valid: false, method: 'ausente' }
 }
 
 function extractOrderPayload(payload: any) {
@@ -53,6 +71,40 @@ function parseNumber(value: unknown, fallback = 0) {
     return Number.isFinite(parsed) ? parsed : fallback
   }
   return fallback
+}
+
+function buildPayloadSummary(payload: unknown) {
+  if (!payload || typeof payload !== 'object') {
+    return 'Payload vazio ou inválido.'
+  }
+
+  const source = payload as Record<string, unknown>
+  const topLevelKeys = Object.keys(source).slice(0, 8)
+  const event = String(source.event || source.type || source.action || 'sem_evento')
+
+  return `event=${event}; campos=${topLevelKeys.join(', ') || 'nenhum'}`
+}
+
+function updateWebhookDiagnostics(
+  integration: IntegracaoPlataforma,
+  details: {
+    statusCode: number
+    diagnostico: string
+    contentType?: string
+    authMethod?: string
+    storeId?: string
+    orderId?: string
+    payloadSummary?: string
+  }
+) {
+  integration.ultimoWebhookRecebidoEm = new Date()
+  integration.ultimoWebhookStatusCode = details.statusCode
+  integration.ultimoWebhookDiagnostico = details.diagnostico
+  integration.ultimoWebhookContentType = details.contentType || 'não informado'
+  integration.ultimoWebhookMetodoAutenticacao = details.authMethod || 'desconhecido'
+  integration.ultimoWebhookStoreIdRecebido = details.storeId || undefined
+  integration.ultimoWebhookOrderIdRecebido = details.orderId || undefined
+  integration.ultimoWebhookPayloadResumo = details.payloadSummary || undefined
 }
 
 function mapFormaPagamento(value: unknown): Pedido["formaPagamento"] {
@@ -179,17 +231,32 @@ async function parseWebhookBody(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const credentials = await getCardapioWebCredentials()
+    const contentType = request.headers.get('content-type') || 'não informado'
+    const authDiagnostics = detectAuthMethod(request, credentials.token)
 
     // Validar webhook
-    if (!validateCardapioWebWebhook(request, credentials.token)) {
+    if (!authDiagnostics.valid) {
       if (credentials.integration) {
         credentials.integration.status = 'erro'
-        credentials.integration.ultimoErroWebhook = 'Token inválido recebido no webhook.'
-        appendWebhookEvent(credentials.integration, "erro", "Token inválido recebido no webhook.")
+        credentials.integration.ultimoErroWebhook = 'Token inválido ou ausente no webhook.'
+        updateWebhookDiagnostics(credentials.integration, {
+          statusCode: 401,
+          diagnostico: 'Falha na autenticação do webhook.',
+          contentType,
+          authMethod: authDiagnostics.method,
+        })
+        appendWebhookEvent(
+          credentials.integration,
+          "erro",
+          `Falha de autenticação no webhook (${authDiagnostics.method}).`
+        )
         await saveIntegrations(credentials.integrations)
       }
       return NextResponse.json(
-        { error: 'Unauthorized - Token inválido para CardapioWeb' },
+        {
+          error: 'Unauthorized - Token inválido para CardapioWeb',
+          diagnostic: authDiagnostics.method,
+        },
         { status: 401 }
       )
     }
@@ -197,6 +264,7 @@ export async function POST(request: NextRequest) {
     // Parse do corpo da requisição
     const orderData = await parseWebhookBody(request)
     const orderPayload = extractOrderPayload(orderData)
+    const payloadSummary = buildPayloadSummary(orderData)
     const orderId =
       orderPayload.id ||
       orderPayload.orderId ||
@@ -215,6 +283,13 @@ export async function POST(request: NextRequest) {
       if (credentials.integration) {
         credentials.integration.status = 'erro'
         credentials.integration.ultimoErroWebhook = 'Pedido recebido sem ID obrigatório.'
+        updateWebhookDiagnostics(credentials.integration, {
+          statusCode: 400,
+          diagnostico: 'Payload recebido sem identificador de pedido.',
+          contentType,
+          authMethod: authDiagnostics.method,
+          payloadSummary,
+        })
         appendWebhookEvent(credentials.integration, "erro", "Pedido recebido sem ID obrigatório.")
         await saveIntegrations(credentials.integrations)
       }
@@ -231,6 +306,15 @@ export async function POST(request: NextRequest) {
       if (credentials.integration) {
         credentials.integration.status = 'erro'
         credentials.integration.ultimoErroWebhook = `Store ID divergente. Esperado ${expectedStoreId} e recebido ${storeId}.`
+        updateWebhookDiagnostics(credentials.integration, {
+          statusCode: 400,
+          diagnostico: 'Webhook recebido para outra loja.',
+          contentType,
+          authMethod: authDiagnostics.method,
+          storeId: String(storeId),
+          orderId: String(orderId),
+          payloadSummary,
+        })
         appendWebhookEvent(
           credentials.integration,
           "erro",
@@ -259,6 +343,15 @@ export async function POST(request: NextRequest) {
       cardapioWebIntegration.ultimoPedidoRecebidoEm = new Date()
       cardapioWebIntegration.ultimoPedidoRecebidoId = pedido.numero || pedido.id
       cardapioWebIntegration.ultimoErroWebhook = undefined
+      updateWebhookDiagnostics(cardapioWebIntegration, {
+        statusCode: 200,
+        diagnostico: 'Webhook processado com sucesso.',
+        contentType,
+        authMethod: authDiagnostics.method,
+        storeId: storeId ? String(storeId) : expectedStoreId,
+        orderId: String(orderId),
+        payloadSummary,
+      })
       appendWebhookEvent(
         cardapioWebIntegration,
         "pedido_recebido",
@@ -291,6 +384,12 @@ export async function POST(request: NextRequest) {
         credentials.integration.status = 'erro'
         credentials.integration.ultimoErroWebhook =
           error instanceof Error ? error.message : 'Erro interno desconhecido no webhook.'
+        updateWebhookDiagnostics(credentials.integration, {
+          statusCode: 500,
+          diagnostico: 'Erro interno ao processar o webhook.',
+          contentType: request.headers.get('content-type') || 'não informado',
+          authMethod: detectAuthMethod(request, credentials.token).method,
+        })
         appendWebhookEvent(
           credentials.integration,
           "erro",
@@ -318,6 +417,18 @@ export async function GET() {
     platform: 'CardapioWeb',
     storeId: credentials.storeId,
     version: '1.0',
-    supportedEvents: ['order.created', 'order.updated', 'order.cancelled']
+    supportedEvents: ['order.created', 'order.updated', 'order.cancelled'],
+    diagnostics: credentials.integration
+      ? {
+          ultimoWebhookRecebidoEm: credentials.integration.ultimoWebhookRecebidoEm,
+          ultimoWebhookStatusCode: credentials.integration.ultimoWebhookStatusCode,
+          ultimoWebhookDiagnostico: credentials.integration.ultimoWebhookDiagnostico,
+          ultimoWebhookContentType: credentials.integration.ultimoWebhookContentType,
+          ultimoWebhookMetodoAutenticacao: credentials.integration.ultimoWebhookMetodoAutenticacao,
+          ultimoWebhookStoreIdRecebido: credentials.integration.ultimoWebhookStoreIdRecebido,
+          ultimoWebhookOrderIdRecebido: credentials.integration.ultimoWebhookOrderIdRecebido,
+          ultimoWebhookPayloadResumo: credentials.integration.ultimoWebhookPayloadResumo,
+        }
+      : null,
   })
 }

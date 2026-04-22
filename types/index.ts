@@ -229,6 +229,14 @@ export interface IntegracaoPlataforma {
   ultimoPedidoRecebidoEm?: Date
   ultimoPedidoRecebidoId?: string
   ultimoErroWebhook?: string
+  ultimoWebhookRecebidoEm?: Date
+  ultimoWebhookStatusCode?: number
+  ultimoWebhookDiagnostico?: string
+  ultimoWebhookContentType?: string
+  ultimoWebhookMetodoAutenticacao?: string
+  ultimoWebhookStoreIdRecebido?: string
+  ultimoWebhookOrderIdRecebido?: string
+  ultimoWebhookPayloadResumo?: string
   webhookEvents?: {
     id: string
     tipo: "pedido_recebido" | "erro" | "validacao"

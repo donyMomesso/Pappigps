@@ -360,6 +360,49 @@ function IntegrationsTab() {
                   </div>
                 </div>
 
+                <div className="mb-4 grid gap-3 lg:grid-cols-2">
+                  <div className="rounded-xl border border-zinc-200 bg-white p-3">
+                    <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                      Último diagnóstico do webhook
+                    </p>
+                    <p className="mt-2 text-sm text-zinc-800">
+                      {integration.ultimoWebhookDiagnostico || "Nenhuma tentativa registrada ainda"}
+                    </p>
+                    {integration.ultimoWebhookRecebidoEm && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {formatDateTime(integration.ultimoWebhookRecebidoEm)}
+                      </p>
+                    )}
+                  </div>
+                  <div className="rounded-xl border border-zinc-200 bg-white p-3">
+                    <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                      Detalhes técnicos
+                    </p>
+                    <div className="mt-2 space-y-1 text-sm text-zinc-800">
+                      <p>
+                        Status HTTP: {integration.ultimoWebhookStatusCode || "N/D"}
+                      </p>
+                      <p>
+                        Content-Type: {integration.ultimoWebhookContentType || "N/D"}
+                      </p>
+                      <p>
+                        Autenticação: {integration.ultimoWebhookMetodoAutenticacao || "N/D"}
+                      </p>
+                      <p>
+                        Store recebido: {integration.ultimoWebhookStoreIdRecebido || "N/D"}
+                      </p>
+                      <p>
+                        Pedido recebido: {integration.ultimoWebhookOrderIdRecebido || "N/D"}
+                      </p>
+                    </div>
+                    {integration.ultimoWebhookPayloadResumo && (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {integration.ultimoWebhookPayloadResumo}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
                 <div className="mb-4 grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Store ID</Label>
