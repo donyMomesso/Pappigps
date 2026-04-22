@@ -1,11 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { upsertPedido } from '@/lib/server/repositories'
-import type { Pedido } from '@/types'
+import { getIntegrations, saveIntegrations, upsertPedido } from '@/lib/server/repositories'
+import type { IntegracaoPlataforma, Pedido } from '@/types'
 
-// Simulação de validação de webhook CardapioWeb
-function validateCardapioWebWebhook(request: NextRequest): boolean {
+async function getCardapioWebCredentials() {
+  const integrations = await getIntegrations()
+  const integration = integrations.find((item) => item.id === 'cardapioweb_001')
+
+  return {
+    token: integration?.apiKey?.trim() || process.env.CARDAPIO_WEB_TOKEN || 'cardapioweb_token_dev',
+    storeId: integration?.storeId?.trim() || process.env.CARDAPIO_WEB_STORE_ID || '5371',
+    integrations,
+    integration,
+  }
+}
+
+function appendWebhookEvent(
+  integration: IntegracaoPlataforma,
+  tipo: "pedido_recebido" | "erro" | "validacao",
+  mensagem: string
+) {
+  const nextEvents = [
+    {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      tipo,
+      mensagem,
+      criadoEm: new Date(),
+    },
+    ...(integration.webhookEvents || []),
+  ]
+
+  integration.webhookEvents = nextEvents.slice(0, 5)
+}
+
+function validateCardapioWebWebhook(request: NextRequest, expectedToken: string): boolean {
   const authHeader = request.headers.get('authorization')
-  const expectedToken = process.env.CARDAPIO_WEB_TOKEN || 'cardapioweb_token_dev'
 
   // CardapioWeb pode usar diferentes formatos de autenticação
   return authHeader === `Bearer ${expectedToken}` ||
@@ -136,8 +164,16 @@ async function parseWebhookBody(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const credentials = await getCardapioWebCredentials()
+
     // Validar webhook
-    if (!validateCardapioWebWebhook(request)) {
+    if (!validateCardapioWebWebhook(request, credentials.token)) {
+      if (credentials.integration) {
+        credentials.integration.status = 'erro'
+        credentials.integration.ultimoErroWebhook = 'Token inválido recebido no webhook.'
+        appendWebhookEvent(credentials.integration, "erro", "Token inválido recebido no webhook.")
+        await saveIntegrations(credentials.integrations)
+      }
       return NextResponse.json(
         { error: 'Unauthorized - Token inválido para CardapioWeb' },
         { status: 401 }
@@ -162,6 +198,12 @@ export async function POST(request: NextRequest) {
 
     // Validar dados obrigatórios
     if (!orderId) {
+      if (credentials.integration) {
+        credentials.integration.status = 'erro'
+        credentials.integration.ultimoErroWebhook = 'Pedido recebido sem ID obrigatório.'
+        appendWebhookEvent(credentials.integration, "erro", "Pedido recebido sem ID obrigatório.")
+        await saveIntegrations(credentials.integrations)
+      }
       return NextResponse.json(
         { error: 'Dados do pedido inválidos - ID do pedido obrigatório' },
         { status: 400 }
@@ -169,9 +211,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar se é da loja correta (5371)
-    const expectedStoreId = process.env.CARDAPIO_WEB_STORE_ID || '5371'
+    const expectedStoreId = credentials.storeId
 
     if (storeId && storeId.toString() !== expectedStoreId) {
+      if (credentials.integration) {
+        credentials.integration.status = 'erro'
+        credentials.integration.ultimoErroWebhook = `Store ID divergente. Esperado ${expectedStoreId} e recebido ${storeId}.`
+        appendWebhookEvent(
+          credentials.integration,
+          "erro",
+          `Store ID divergente. Esperado ${expectedStoreId} e recebido ${storeId}.`
+        )
+        await saveIntegrations(credentials.integrations)
+      }
       return NextResponse.json(
         { error: `Pedido não é desta loja. Esperado: ${expectedStoreId}, Recebido: ${storeId}` },
         { status: 400 }
@@ -181,6 +233,25 @@ export async function POST(request: NextRequest) {
     // Processar pedido
     const pedido = processCardapioWebOrder(orderData)
     await upsertPedido(pedido)
+
+    const cardapioWebIntegration = credentials.integration
+
+    if (cardapioWebIntegration) {
+      cardapioWebIntegration.ativo = true
+      cardapioWebIntegration.status = 'conectado'
+      cardapioWebIntegration.storeId = cardapioWebIntegration.storeId || expectedStoreId
+      cardapioWebIntegration.apiKey = cardapioWebIntegration.apiKey || credentials.token
+      cardapioWebIntegration.ultimaSincronizacao = new Date()
+      cardapioWebIntegration.ultimoPedidoRecebidoEm = new Date()
+      cardapioWebIntegration.ultimoPedidoRecebidoId = pedido.numero || pedido.id
+      cardapioWebIntegration.ultimoErroWebhook = undefined
+      appendWebhookEvent(
+        cardapioWebIntegration,
+        "pedido_recebido",
+        `Pedido ${pedido.numero || pedido.id} recebido com sucesso.`
+      )
+      await saveIntegrations(credentials.integrations)
+    }
 
     console.log('Pedido CardapioWeb recebido:', {
       pedido: pedido.numero,
@@ -200,6 +271,22 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Erro no webhook CardapioWeb:', error)
+    try {
+      const credentials = await getCardapioWebCredentials()
+      if (credentials.integration) {
+        credentials.integration.status = 'erro'
+        credentials.integration.ultimoErroWebhook =
+          error instanceof Error ? error.message : 'Erro interno desconhecido no webhook.'
+        appendWebhookEvent(
+          credentials.integration,
+          "erro",
+          error instanceof Error ? error.message : 'Erro interno desconhecido no webhook.'
+        )
+        await saveIntegrations(credentials.integrations)
+      }
+    } catch (integrationError) {
+      console.error('Erro ao salvar status da integração:', integrationError)
+    }
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
     return NextResponse.json(
       { error: 'Erro interno do servidor', details: errorMessage },
@@ -210,10 +297,12 @@ export async function POST(request: NextRequest) {
 
 // Endpoint para verificar status do webhook
 export async function GET() {
+  const credentials = await getCardapioWebCredentials()
+
   return NextResponse.json({
     status: 'active',
     platform: 'CardapioWeb',
-    storeId: process.env.CARDAPIO_WEB_STORE_ID || '5371',
+    storeId: credentials.storeId,
     version: '1.0',
     supportedEvents: ['order.created', 'order.updated', 'order.cancelled']
   })

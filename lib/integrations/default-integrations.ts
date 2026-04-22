@@ -12,6 +12,7 @@ export function getDefaultIntegrations(): IntegracaoPlataforma[] {
       storeId: "",
       apiKey: "",
       webhookUrl: `${baseUrl}/api/webhooks/ifood`,
+      webhookEvents: [],
       status: "desconectado"
     },
     {
@@ -22,6 +23,7 @@ export function getDefaultIntegrations(): IntegracaoPlataforma[] {
       storeId: "",
       apiKey: "",
       webhookUrl: `${baseUrl}/api/webhooks/99food`,
+      webhookEvents: [],
       status: "desconectado"
     },
     {
@@ -32,6 +34,7 @@ export function getDefaultIntegrations(): IntegracaoPlataforma[] {
       storeId: process.env.CARDAPIO_WEB_STORE_ID || "5371",
       apiKey: process.env.CARDAPIO_WEB_TOKEN || "",
       webhookUrl: `${baseUrl}/api/webhooks/cardapioweb`,
+      webhookEvents: [],
       status: "desconectado"
     }
   ]

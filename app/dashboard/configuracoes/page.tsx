@@ -12,8 +12,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "@/hooks/use-toast"
-import { Building2, Clock, Bell, Save, Loader2, MapPin, DollarSign, FileText, Users, Search, CheckCircle2, AlertTriangle, Copy, Eye, EyeOff, Link2, Power } from "lucide-react"
-import { formatCurrency } from "@/lib/utils"
+import { Building2, Clock, Bell, Save, Loader2, MapPin, DollarSign, FileText, Users, Search, CheckCircle2, AlertTriangle, Copy, Eye, EyeOff, Link2, Power, FlaskConical, Trash2, Activity } from "lucide-react"
+import { formatCurrency, formatDateTime } from "@/lib/utils"
 import type { Configuracoes, IntegracaoPlataforma, Loja } from "@/types"
 import dynamic from 'next/dynamic'
 
@@ -34,6 +34,7 @@ function IntegrationsTab() {
   const [integrations, setIntegrations] = useState<IntegracaoPlataforma[]>([])
   const [loading, setLoading] = useState(false)
   const [visibleApiKeys, setVisibleApiKeys] = useState<Record<string, boolean>>({})
+  const [currentTime, setCurrentTime] = useState(() => Date.now())
 
   const getIntegrationState = (integration: IntegracaoPlataforma) => {
     const hasCredentials = Boolean(integration.storeId?.trim() && integration.apiKey?.trim())
@@ -77,6 +78,11 @@ function IntegrationsTab() {
     }
   }
 
+  const isReceivingRealtime = (integration: IntegracaoPlataforma) => {
+    if (!integration.ultimoPedidoRecebidoEm) return false
+    return currentTime - new Date(integration.ultimoPedidoRecebidoEm).getTime() <= 5 * 60 * 1000
+  }
+
   const handleCopyWebhook = async (webhookUrl: string) => {
     try {
       await navigator.clipboard.writeText(webhookUrl)
@@ -92,6 +98,38 @@ function IntegrationsTab() {
       })
     }
   }
+
+  const handleClearWebhookError = async (id: string) => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/integrations', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action: 'clear-webhook-error' }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Falha ao limpar erro')
+      }
+
+      const result = await response.json()
+      setIntegrations((prev) => prev.map((item) => (item.id === id ? result.integration : item)))
+      toast({
+        title: "Erro limpo",
+        description: "O último erro do webhook foi removido.",
+      })
+    } catch (error) {
+      console.error('Erro ao limpar webhook:', error)
+      toast({
+        title: "Não foi possível limpar",
+        description: "Tente novamente em instantes.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
 
   const fetchIntegrations = async () => {
     try {
@@ -109,6 +147,14 @@ function IntegrationsTab() {
     }
 
     void loadIntegrations()
+  }, [])
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setCurrentTime(Date.now())
+    }, 60_000)
+
+    return () => window.clearInterval(interval)
   }, [])
 
   const handleUpdateIntegration = async (integration: IntegracaoPlataforma) => {
@@ -184,6 +230,7 @@ function IntegrationsTab() {
             const integrationState = getIntegrationState(integration)
             const StatusIcon = integrationState.icon
             const isApiKeyVisible = visibleApiKeys[integration.id] ?? false
+            const hasRealtimeTraffic = isReceivingRealtime(integration)
 
             return (
             <Card key={integration.id} className={`border-l-4 ${integrationState.panelClassName}`}>
@@ -206,6 +253,13 @@ function IntegrationsTab() {
                   </Badge>
                 </div>
 
+                {hasRealtimeTraffic && (
+                  <div className="mb-4 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                    <Activity className="mr-2 h-3.5 w-3.5" />
+                    Recebendo pedidos em tempo real
+                  </div>
+                )}
+
                 <div className="mb-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
@@ -225,6 +279,84 @@ function IntegrationsTab() {
                       <Copy className="mr-2 h-4 w-4" />
                       Copiar
                     </Button>
+                  </div>
+                </div>
+
+                <div className="mb-4 grid gap-3 lg:grid-cols-3">
+                  <div className="rounded-xl border border-zinc-200 bg-white p-3">
+                    <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                      Última sincronização
+                    </p>
+                    <p className="mt-2 text-sm text-zinc-800">
+                      {integration.ultimaSincronizacao
+                        ? formatDateTime(integration.ultimaSincronizacao)
+                        : "Ainda não sincronizou"}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-zinc-200 bg-white p-3">
+                    <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                      Último pedido recebido
+                    </p>
+                    <p className="mt-2 text-sm text-zinc-800">
+                      {integration.ultimoPedidoRecebidoId || "Nenhum pedido recebido"}
+                    </p>
+                    {integration.ultimoPedidoRecebidoEm && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {formatDateTime(integration.ultimoPedidoRecebidoEm)}
+                      </p>
+                    )}
+                  </div>
+                  <div className={`rounded-xl border p-3 ${
+                    integration.ultimoErroWebhook
+                      ? "border-red-200 bg-red-50"
+                      : "border-zinc-200 bg-white"
+                  }`}>
+                    <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                      Último erro do webhook
+                    </p>
+                    <p className={`mt-2 text-sm ${
+                      integration.ultimoErroWebhook ? "text-red-700" : "text-zinc-800"
+                    }`}>
+                      {integration.ultimoErroWebhook || "Nenhum erro registrado"}
+                    </p>
+                    {integration.ultimoErroWebhook && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="mt-2 h-8 px-2 text-red-700 hover:text-red-800"
+                        onClick={() => void handleClearWebhookError(integration.id)}
+                        disabled={loading}
+                      >
+                        <Trash2 className="mr-2 h-3.5 w-3.5" />
+                        Limpar erro
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mb-4 rounded-xl border border-zinc-200 bg-white p-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                    Últimos eventos do webhook
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    {(integration.webhookEvents || []).length === 0 ? (
+                      <p className="text-sm text-zinc-500">Nenhum evento registrado ainda.</p>
+                    ) : (
+                      (integration.webhookEvents || []).map((event) => (
+                        <div key={event.id} className="rounded-lg bg-zinc-50 p-3">
+                          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                            <p className="text-sm font-medium text-zinc-900">{event.mensagem}</p>
+                            <Badge variant="outline" className="w-fit">
+                              {event.tipo}
+                            </Badge>
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {formatDateTime(event.criadoEm)}
+                          </p>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -293,7 +425,8 @@ function IntegrationsTab() {
                       onClick={() => handleTestConnection(integration.id)}
                       disabled={loading}
                     >
-                      Testar Conexão
+                      <FlaskConical className="mr-2 h-4 w-4" />
+                      Validar Configuração
                     </Button>
                     <Button
                       size="sm"
@@ -307,6 +440,11 @@ function IntegrationsTab() {
                 {!integration.ativo && (
                   <p className="mt-3 text-xs text-muted-foreground">
                     Ligue o toggle <strong>Ativo</strong> e salve para deixar essa integração pronta para uso.
+                  </p>
+                )}
+                {integration.ativo && (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Esta validação confirma se a configuração está pronta para receber pedidos reais via webhook.
                   </p>
                 )}
               </CardContent>

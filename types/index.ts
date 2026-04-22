@@ -226,6 +226,15 @@ export interface IntegracaoPlataforma {
   apiKey: string
   webhookUrl: string
   ultimaSincronizacao?: Date
+  ultimoPedidoRecebidoEm?: Date
+  ultimoPedidoRecebidoId?: string
+  ultimoErroWebhook?: string
+  webhookEvents?: {
+    id: string
+    tipo: "pedido_recebido" | "erro" | "validacao"
+    mensagem: string
+    criadoEm: Date
+  }[]
   status: 'conectado' | 'desconectado' | 'erro'
 }
 

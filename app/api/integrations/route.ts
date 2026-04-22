@@ -32,6 +32,7 @@ function normalizeIntegration(integration: IntegracaoPlataforma, request: NextRe
   return {
     ...integration,
     webhookUrl: `${getBaseUrl(request)}${getWebhookPath(integration.plataforma, integration.id)}`,
+    webhookEvents: integration.webhookEvents || [],
     status,
     ultimaSincronizacao: integration.ativo && hasCredentials ? integration.ultimaSincronizacao : undefined,
   }
@@ -41,6 +42,31 @@ function normalizeIntegration(integration: IntegracaoPlataforma, request: NextRe
 export async function GET(request: NextRequest) {
   const integracoes = await getIntegrations()
   return NextResponse.json(integracoes.map((integration) => normalizeIntegration(integration, request)))
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const data = await request.json()
+    const { id, action } = data
+    const integracoes = await getIntegrations()
+    const integracao = integracoes.find((item) => item.id === id)
+
+    if (!integracao) {
+      return NextResponse.json({ error: "Integração não encontrada" }, { status: 404 })
+    }
+
+    if (action === "clear-webhook-error") {
+      integracao.ultimoErroWebhook = undefined
+      integracao.webhookEvents = (integracao.webhookEvents || []).filter((event) => event.tipo !== "erro")
+      await saveIntegrations(integracoes)
+      return NextResponse.json({ success: true, integration: normalizeIntegration(integracao, request) })
+    }
+
+    return NextResponse.json({ error: "Ação inválida" }, { status: 400 })
+  } catch (error) {
+    console.error("Erro ao atualizar status da integração:", error)
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
+  }
 }
 
 // POST - Atualizar integração
@@ -116,7 +142,10 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       success: testSuccess,
-      message: testSuccess ? 'Conexão estabelecida com sucesso' : 'Falha na conexão. Verifique Store ID e API Key'
+      readyForWebhook: testSuccess,
+      message: testSuccess
+        ? 'Configuração validada. A integração está pronta para receber webhooks reais.'
+        : 'Configuração incompleta. Verifique Store ID, API Key e se a integração está ativa.'
     })
 
   } catch (error) {
