@@ -2,10 +2,45 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getIntegrations, saveIntegrations } from '@/lib/server/repositories'
 import type { IntegracaoPlataforma } from '@/types'
 
+function getBaseUrl(request: NextRequest) {
+  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL?.trim()
+  if (configuredUrl) {
+    return configuredUrl.replace(/\/$/, '')
+  }
+
+  const forwardedProto = request.headers.get('x-forwarded-proto')
+  const forwardedHost = request.headers.get('x-forwarded-host')
+
+  if (forwardedProto && forwardedHost) {
+    return `${forwardedProto}://${forwardedHost}`
+  }
+
+  return request.nextUrl.origin.replace(/\/$/, '')
+}
+
+function getWebhookPath(plataforma: IntegracaoPlataforma['plataforma'], id: string) {
+  if (id === 'cardapioweb_001') return '/api/webhooks/cardapioweb'
+  if (plataforma === 'ifood') return '/api/webhooks/ifood'
+  if (plataforma === '99food') return '/api/webhooks/99food'
+  return '/api/webhooks/cardapioweb'
+}
+
+function normalizeIntegration(integration: IntegracaoPlataforma, request: NextRequest): IntegracaoPlataforma {
+  const hasCredentials = Boolean(integration.storeId?.trim() && integration.apiKey?.trim())
+  const status = integration.ativo ? (hasCredentials ? 'conectado' : 'erro') : 'desconectado'
+
+  return {
+    ...integration,
+    webhookUrl: `${getBaseUrl(request)}${getWebhookPath(integration.plataforma, integration.id)}`,
+    status,
+    ultimaSincronizacao: integration.ativo && hasCredentials ? integration.ultimaSincronizacao : undefined,
+  }
+}
+
 // GET - Listar integrações
-export async function GET() {
+export async function GET(request: NextRequest) {
   const integracoes = await getIntegrations()
-  return NextResponse.json(integracoes)
+  return NextResponse.json(integracoes.map((integration) => normalizeIntegration(integration, request)))
 }
 
 // POST - Atualizar integração
@@ -34,17 +69,20 @@ export async function POST(request: NextRequest) {
       integracao.ativo = ativo
     }
 
-    // Simular teste de conexão
+    // Atualizar status coerente com o estado salvo
     if (integracao.ativo && integracao.storeId && integracao.apiKey) {
       integracao.status = 'conectado'
       integracao.ultimaSincronizacao = new Date()
     } else {
       integracao.status = 'desconectado'
+      integracao.ultimaSincronizacao = undefined
     }
+
+    integracao.webhookUrl = `${getBaseUrl(request)}${getWebhookPath(integracao.plataforma, integracao.id)}`
 
     await saveIntegrations(integracoes)
 
-    return NextResponse.json(integracao)
+    return NextResponse.json(normalizeIntegration(integracao, request))
 
   } catch (error) {
     console.error('Erro ao atualizar integração:', error)
@@ -70,8 +108,7 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Simular teste de conexão
-    const testSuccess = Boolean(integracao.storeId?.trim() && integracao.apiKey?.trim())
+    const testSuccess = Boolean(integracao.ativo && integracao.storeId?.trim() && integracao.apiKey?.trim())
 
     integracao.status = testSuccess ? 'conectado' : 'erro'
     integracao.ultimaSincronizacao = testSuccess ? new Date() : undefined
