@@ -44,6 +44,7 @@ export function formatTime(date: Date | string): string {
 export function getStatusPedidoLabel(status: StatusPedido): string {
   const labels: Record<StatusPedido, string> = {
     pendente: 'Pendente',
+    em_preparo: 'Em Preparo',
     em_rota: 'Em Rota',
     entregue: 'Entregue',
     cancelado: 'Cancelado'
@@ -54,6 +55,7 @@ export function getStatusPedidoLabel(status: StatusPedido): string {
 export function getStatusPedidoColor(status: StatusPedido): string {
   const colors: Record<StatusPedido, string> = {
     pendente: 'bg-amber-100 text-amber-800',
+    em_preparo: 'bg-orange-100 text-orange-800',
     em_rota: 'bg-blue-100 text-blue-800',
     entregue: 'bg-emerald-100 text-emerald-800',
     cancelado: 'bg-red-100 text-red-800'

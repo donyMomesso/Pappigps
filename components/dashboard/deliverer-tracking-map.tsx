@@ -138,7 +138,11 @@ export function DelivererTrackingMap({
                       <br />
                       {pedido.cliente.nome}
                       <br />
-                      {pedido.status === "em_rota" ? "A caminho" : "Aguardando saída"}
+                      {pedido.status === "em_rota"
+                        ? "A caminho"
+                        : pedido.status === "em_preparo"
+                          ? "Em preparo"
+                          : "Aguardando saída"}
                     </Popup>
                   </Marker>
                 )

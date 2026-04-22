@@ -48,6 +48,8 @@ export default function TrackingPage({ params }: { params: Promise<{ token: stri
   const trackingLabel =
     data.pedido.status === "entregue"
       ? "Pedido entregue"
+      : data.pedido.status === "em_preparo"
+        ? "Pedido em preparo"
       : data.pedido.status === "em_rota"
         ? "A caminho"
         : "Preparando saída"

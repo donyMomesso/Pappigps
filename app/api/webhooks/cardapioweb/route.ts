@@ -67,6 +67,14 @@ function mapFormaPagamento(value: unknown): Pedido["formaPagamento"] {
 function mapStatus(value: unknown): Pedido["status"] {
   const normalized = String(value ?? '').toLowerCase()
 
+  if (
+    normalized.includes('preparo') ||
+    normalized.includes('prepar') ||
+    normalized.includes('kitchen') ||
+    normalized.includes('readying')
+  ) {
+    return 'em_preparo'
+  }
   if (normalized.includes('rota') || normalized.includes('dispatch') || normalized.includes('delivery')) {
     return 'em_rota'
   }
@@ -108,7 +116,13 @@ function processCardapioWebOrder(orderPayload: any): Pedido {
     endereco: enderecoEntrega,
     valor: parseNumber(orderData.total || orderData.totalValue || orderData.valor || 0),
     formaPagamento: mapFormaPagamento(orderData.payment?.method || orderData.formaPagamento),
-    status: mapStatus(orderData.status || orderData.situacao || orderPayload?.event),
+    status: mapStatus(
+      orderData.status ||
+      orderData.situacao ||
+      orderData.preparationStatus ||
+      orderData.orderStatus ||
+      orderPayload?.event
+    ),
     dataCriacao: orderData.createdAt ? new Date(orderData.createdAt) : new Date(),
     dataEntrega: orderData.deliveryTime ? new Date(orderData.deliveryTime) : undefined,
     observacoes: orderData.notes || orderData.observacoes || '',

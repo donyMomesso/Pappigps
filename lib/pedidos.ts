@@ -37,6 +37,14 @@ function mapFormaPagamento(value: unknown): FormaPagamento {
 function mapStatus(value: unknown): StatusPedido {
   const normalized = String(value ?? "").toLowerCase()
 
+  if (
+    normalized.includes("preparo") ||
+    normalized.includes("prepar") ||
+    normalized.includes("kitchen") ||
+    normalized.includes("readying")
+  ) {
+    return "em_preparo"
+  }
   if (normalized.includes("rota") || normalized.includes("dispatch") || normalized.includes("delivery")) {
     return "em_rota"
   }
@@ -174,7 +182,9 @@ export async function getPedidos() {
 
 export function buildDashboardStatsFromPedidos(pedidos: Pedido[]) {
   const pedidosHoje = pedidos.length
-  const pedidosPendentes = pedidos.filter((pedido) => pedido.status === "pendente").length
+  const pedidosPendentes = pedidos.filter(
+    (pedido) => pedido.status === "pendente" || pedido.status === "em_preparo"
+  ).length
   const pedidosEmRota = pedidos.filter((pedido) => pedido.status === "em_rota").length
   const pedidosEntregues = pedidos.filter((pedido) => pedido.status === "entregue").length
   const faturamentoHoje = pedidos.reduce((acc, pedido) => acc + pedido.valor, 0)

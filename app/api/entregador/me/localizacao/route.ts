@@ -42,7 +42,9 @@ export async function POST(request: NextRequest) {
               }
             : rota.entregador,
           pedidos: rota.pedidos.map((pedido) =>
-            pedido.status === "pendente" ? { ...pedido, status: "em_rota" as const } : pedido
+            pedido.status === "pendente" || pedido.status === "em_preparo"
+              ? { ...pedido, status: "em_rota" as const }
+              : pedido
           ),
         }
       })

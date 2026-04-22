@@ -33,7 +33,9 @@ export default function RoteirizacaoPage() {
   const { data } = useSWR("/api/pedidos", fetcher)
   const { data: entregadoresData } = useSWR<Entregador[]>("/api/entregadores", fetcher)
   const { data: configuracoes } = useSWR<Configuracoes>("/api/configuracoes", fetcher)
-  const pedidosPendentes: Pedido[] = (data?.pedidos ?? []).filter((pedido: Pedido) => pedido.status === "pendente")
+  const pedidosDisponiveis: Pedido[] = (data?.pedidos ?? []).filter(
+    (pedido: Pedido) => pedido.status === "pendente" || pedido.status === "em_preparo"
+  )
   const entregadores = entregadoresData ?? []
   const [pedidos, setPedidos] = useState<Pedido[]>([])
   const [selectedPedidos, setSelectedPedidos] = useState<string[]>([])
@@ -71,7 +73,7 @@ export default function RoteirizacaoPage() {
     diariaEntregador: 0,
   }
 
-  const pedidosData = pedidos.length > 0 ? pedidos : pedidosPendentes
+  const pedidosData = pedidos.length > 0 ? pedidos : pedidosDisponiveis
 
   const selectedPedidosData = useMemo(() => 
     selectedPedidos.map(id => pedidosData.find(p => p.id === id)!).filter(Boolean),
@@ -146,7 +148,7 @@ export default function RoteirizacaoPage() {
           <div className="lg:col-span-1 space-y-4">
             <div className="bg-white border border-zinc-200 rounded-xl p-4">
               <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <h3 className="font-semibold text-zinc-900">Pedidos Pendentes</h3>
+                <h3 className="font-semibold text-zinc-900">Pedidos Disponíveis</h3>
                 <span className="text-sm text-zinc-500">{pedidosData.length} pedidos</span>
               </div>
               <div className="max-h-[500px] overflow-y-auto pr-2">

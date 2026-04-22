@@ -17,7 +17,12 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     loja: configuracoes.loja,
-    ativas: pedidosDoEntregador.filter((pedido) => pedido.status === "em_rota" || pedido.status === "pendente"),
+    ativas: pedidosDoEntregador.filter(
+      (pedido) =>
+        pedido.status === "em_rota" ||
+        pedido.status === "pendente" ||
+        pedido.status === "em_preparo"
+    ),
     concluidas: pedidosDoEntregador.filter((pedido) => pedido.status === "entregue"),
   })
 }

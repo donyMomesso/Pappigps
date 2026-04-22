@@ -1,5 +1,5 @@
 // Enums
-export type StatusPedido = 'pendente' | 'em_rota' | 'entregue' | 'cancelado'
+export type StatusPedido = 'pendente' | 'em_preparo' | 'em_rota' | 'entregue' | 'cancelado'
 export type StatusEntregador = 'disponivel' | 'em_rota' | 'offline' | 'pausado'
 export type TipoVeiculo = 'moto' | 'carro' | 'van' | 'caminhao' | 'bicicleta'
 export type FormaPagamento = 'dinheiro' | 'pix' | 'cartao' | 'boleto'

@@ -16,6 +16,7 @@ interface PedidoFiltersProps {
 const statusOptions: { value: StatusPedido | "todos"; label: string }[] = [
   { value: "todos", label: "Todos" },
   { value: "pendente", label: "Pendentes" },
+  { value: "em_preparo", label: "Em Preparo" },
   { value: "em_rota", label: "Em Rota" },
   { value: "entregue", label: "Entregues" },
   { value: "cancelado", label: "Cancelados" },
