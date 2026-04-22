@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "generate-test-orders": "tsx generate-test-orders.ts",
     "test-delivery": "tsx test-delivery-system.ts",
-    "test-routing": "tsx test-routing.ts"
+    "test-routing": "tsx test-routing.ts",
+    "test-create-route": "tsx test-create-route.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
