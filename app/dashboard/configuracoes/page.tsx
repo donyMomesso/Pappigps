@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "@/hooks/use-toast"
-import { Building2, Clock, Bell, Save, Loader2, MapPin, DollarSign, FileText, Users, Search } from "lucide-react"
+import { Building2, Clock, Bell, Save, Loader2, MapPin, DollarSign, FileText, Users, Search, CheckCircle2, AlertTriangle, Copy, Eye, EyeOff, Link2, Power } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import type { Configuracoes, IntegracaoPlataforma, Loja } from "@/types"
 import dynamic from 'next/dynamic'
@@ -33,6 +33,65 @@ const fetcher = async (url: string) => {
 function IntegrationsTab() {
   const [integrations, setIntegrations] = useState<IntegracaoPlataforma[]>([])
   const [loading, setLoading] = useState(false)
+  const [visibleApiKeys, setVisibleApiKeys] = useState<Record<string, boolean>>({})
+
+  const getIntegrationState = (integration: IntegracaoPlataforma) => {
+    const hasCredentials = Boolean(integration.storeId?.trim() && integration.apiKey?.trim())
+
+    if (!integration.ativo) {
+      return {
+        label: "Desligada",
+        description: "A integração está salva, mas desativada.",
+        badgeClassName: "border-zinc-200 bg-zinc-100 text-zinc-700",
+        panelClassName: "border-l-zinc-300",
+        icon: Power,
+      }
+    }
+
+    if (!hasCredentials) {
+      return {
+        label: "Configuração incompleta",
+        description: "Preencha Store ID e API Key para ativar a conexão.",
+        badgeClassName: "border-amber-200 bg-amber-100 text-amber-700",
+        panelClassName: "border-l-amber-500",
+        icon: AlertTriangle,
+      }
+    }
+
+    if (integration.status === "conectado") {
+      return {
+        label: "Conectada",
+        description: "Integração ativa e pronta para receber pedidos.",
+        badgeClassName: "border-emerald-200 bg-emerald-100 text-emerald-700",
+        panelClassName: "border-l-emerald-500",
+        icon: CheckCircle2,
+      }
+    }
+
+    return {
+      label: "Atenção",
+      description: "A integração está ativa, mas precisa de validação.",
+      badgeClassName: "border-red-200 bg-red-100 text-red-700",
+      panelClassName: "border-l-red-500",
+      icon: AlertTriangle,
+    }
+  }
+
+  const handleCopyWebhook = async (webhookUrl: string) => {
+    try {
+      await navigator.clipboard.writeText(webhookUrl)
+      toast({
+        title: "Webhook copiado",
+        description: "A URL do webhook foi copiada para a área de transferência.",
+      })
+    } catch {
+      toast({
+        title: "Não foi possível copiar",
+        description: "Copie a URL manualmente.",
+        variant: "destructive",
+      })
+    }
+  }
 
   const fetchIntegrations = async () => {
     try {
@@ -121,24 +180,52 @@ function IntegrationsTab() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {integrations.map((integration) => (
-            <Card key={integration.id} className="border-l-4 border-l-blue-500">
-              <CardContent className="p-4">
+          {integrations.map((integration) => {
+            const integrationState = getIntegrationState(integration)
+            const StatusIcon = integrationState.icon
+            const isApiKeyVisible = visibleApiKeys[integration.id] ?? false
+
+            return (
+            <Card key={integration.id} className={`border-l-4 ${integrationState.panelClassName}`}>
+              <CardContent className="p-4 sm:p-5">
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 shrink-0 bg-blue-100 rounded-lg flex items-center justify-center">
                       <FileText className="w-5 h-5 text-blue-600" />
                     </div>
                     <div className="min-w-0">
                       <h3 className="font-medium">{integration.nome}</h3>
-                      <p className="break-all text-sm text-muted-foreground">
-                        Webhook: {integration.webhookUrl}
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {integrationState.description}
                       </p>
                     </div>
                   </div>
-                  <Badge variant={integration.status === 'conectado' ? 'default' : 'secondary'}>
-                    {integration.status}
+                  <Badge variant="outline" className={integrationState.badgeClassName}>
+                    <StatusIcon className="mr-1 h-3.5 w-3.5" />
+                    {integrationState.label}
                   </Badge>
+                </div>
+
+                <div className="mb-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
+                        <Link2 className="h-3.5 w-3.5" />
+                        Webhook da Plataforma
+                      </p>
+                      <p className="mt-2 break-all text-sm text-zinc-800">{integration.webhookUrl}</p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0"
+                      onClick={() => void handleCopyWebhook(integration.webhookUrl)}
+                    >
+                      <Copy className="mr-2 h-4 w-4" />
+                      Copiar
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="mb-4 grid gap-4 md:grid-cols-2">
@@ -153,9 +240,33 @@ function IntegrationsTab() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>API Key</Label>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label>API Key</Label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs text-muted-foreground"
+                        onClick={() => setVisibleApiKeys((prev) => ({
+                          ...prev,
+                          [integration.id]: !prev[integration.id],
+                        }))}
+                      >
+                        {isApiKeyVisible ? (
+                          <>
+                            <EyeOff className="mr-1 h-3.5 w-3.5" />
+                            Ocultar
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="mr-1 h-3.5 w-3.5" />
+                            Mostrar
+                          </>
+                        )}
+                      </Button>
+                    </div>
                     <Input
-                      type="password"
+                      type={isApiKeyVisible ? "text" : "password"}
                       value={integration.apiKey}
                       onChange={(e) => setIntegrations(prev => prev.map(i =>
                         i.id === integration.id ? { ...i, apiKey: e.target.value } : i
@@ -193,9 +304,14 @@ function IntegrationsTab() {
                     </Button>
                   </div>
                 </div>
+                {!integration.ativo && (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Ligue o toggle <strong>Ativo</strong> e salve para deixar essa integração pronta para uso.
+                  </p>
+                )}
               </CardContent>
             </Card>
-          ))}
+          )})}
         </CardContent>
       </Card>
 
