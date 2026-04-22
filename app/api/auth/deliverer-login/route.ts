@@ -11,13 +11,18 @@ export async function POST(request: Request) {
   try {
     const data = delivererLoginSchema.parse(await request.json())
     const entregadores = await getEntregadores()
-    const entregador = entregadores.find(
-      (item) => clean(item.cpf) === clean(data.cpf) && clean(item.telefone) === clean(data.telefone)
-    )
+    const hasCode = Boolean(data.codigoAcesso?.trim())
+    const entregador = entregadores.find((item) => {
+      if (hasCode) {
+        return item.codigoAcesso === data.codigoAcesso?.trim()
+      }
+
+      return clean(item.cpf) === clean(data.cpf || "") && clean(item.telefone) === clean(data.telefone || "")
+    })
 
     if (!entregador) {
       return NextResponse.json(
-        { error: "CPF ou telefone não encontrado. Verifique os dados informados." },
+        { error: hasCode ? "Código de acesso inválido." : "CPF ou telefone não encontrado. Verifique os dados informados." },
         { status: 401 }
       )
     }

@@ -6,7 +6,7 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, MapPin, Clock, Package, User, Phone, CheckCircle, Circle } from "lucide-react"
+import { ArrowLeft, MapPin, Clock, Package, User, Phone, CheckCircle, Circle, Copy } from "lucide-react"
 import type { Configuracoes, Loja, Rota } from "@/types"
 import { cn, formatCurrency, formatDistance, formatDuration, formatDateTime, getTipoVeiculoLabel, getStatusPedidoLabel, getStatusPedidoColor } from "@/lib/utils"
 
@@ -86,6 +86,12 @@ export default function RotaDetalhePage({ params }: { params: Promise<{ id: stri
 
   const totalValue = rota.pedidos.reduce((sum, p) => sum + p.valor, 0)
   const deliveredCount = rota.pedidos.filter(p => p.status === "entregue").length
+
+  const copyTrackingLink = async (token?: string) => {
+    if (!token || typeof window === "undefined") return
+    const url = `${window.location.origin}/rastreio/${token}`
+    await navigator.clipboard.writeText(url)
+  }
 
   return (
     <>
@@ -220,6 +226,17 @@ export default function RotaDetalhePage({ params }: { params: Promise<{ id: stri
                       <p className="text-sm font-medium text-emerald-600 mt-1">
                         {formatCurrency(pedido.valor)}
                       </p>
+                      {pedido.trackingToken && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-2 h-8 px-2 text-emerald-700"
+                          onClick={() => void copyTrackingLink(pedido.trackingToken)}
+                        >
+                          <Copy className="mr-2 h-3.5 w-3.5" />
+                          Copiar rastreio
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}

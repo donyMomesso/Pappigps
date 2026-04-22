@@ -74,6 +74,12 @@ export function EntregadoresGrid({ entregadores }: EntregadoresGridProps) {
               <Phone className="w-4 h-4 text-zinc-400" />
               {entregador.telefone}
             </div>
+            {entregador.codigoAcesso && (
+              <div className="flex items-center gap-2 text-sm text-zinc-600">
+                <MapPin className="w-4 h-4 text-zinc-400" />
+                Código app: <span className="font-medium text-zinc-900">{entregador.codigoAcesso}</span>
+              </div>
+            )}
             {entregador.email && (
               <div className="flex items-center gap-2 text-sm text-zinc-600">
                 <Mail className="w-4 h-4 text-zinc-400" />

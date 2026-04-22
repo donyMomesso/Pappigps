@@ -6,14 +6,25 @@ export const adminLoginSchema = z.object({
 })
 
 export const delivererLoginSchema = z.object({
-  cpf: z.string().min(11),
-  telefone: z.string().min(10)
-})
+  codigoAcesso: z.string().optional().or(z.literal("")),
+  cpf: z.string().optional().or(z.literal("")),
+  telefone: z.string().optional().or(z.literal("")),
+}).refine(
+  (data) => {
+    const hasCode = Boolean(data.codigoAcesso?.trim())
+    const hasCpfAndPhone = Boolean(data.cpf?.trim() && data.telefone?.trim())
+    return hasCode || hasCpfAndPhone
+  },
+  {
+    message: "Informe o código de acesso ou CPF e telefone",
+  }
+)
 
 export const entregadorSchema = z.object({
   nome: z.string().min(3),
   telefone: z.string().min(10),
   cpf: z.string().min(11),
+  codigoAcesso: z.string().optional().or(z.literal("")),
   email: z.string().email().optional().or(z.literal("")),
   veiculo: z.enum(["moto", "carro", "van", "caminhao", "bicicleta"]),
   placaVeiculo: z.string().optional().or(z.literal(""))

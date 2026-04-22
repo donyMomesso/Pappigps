@@ -58,6 +58,7 @@ export interface Pedido {
   rotaId?: string
   entregadorId?: string
   ordemEntrega?: number
+  trackingToken?: string
   taxaEntrega?: TaxaEntrega
 }
 
@@ -122,6 +123,7 @@ export interface Entregador {
   telefone: string
   email?: string
   cpf: string
+  codigoAcesso?: string
   veiculo: TipoVeiculo
   placaVeiculo?: string
   status: StatusEntregador

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { generateTrackingToken } from "@/lib/delivery/identifiers"
 import { estimateRoute } from "@/lib/routing/estimate-route"
 import { addRota, getConfiguracoes, getEntregadores, getRotas } from "@/lib/server/repositories"
 import { getPedidos } from "@/lib/pedidos"
@@ -33,7 +34,8 @@ export async function POST(request: Request) {
         ...pedido,
         entregadorId: entregador.id,
         ordemEntrega: index + 1,
-        rotaId
+        rotaId,
+        trackingToken: pedido.trackingToken || generateTrackingToken(),
       })),
       distanciaTotal: estimativa.distanciaTotal,
       tempoEstimado: estimativa.tempoEstimado,

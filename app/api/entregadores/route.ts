@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { generateAccessCode } from "@/lib/delivery/identifiers"
 import { addEntregador, getEntregadores } from "@/lib/server/repositories"
 import { entregadorSchema } from "@/lib/validation/schemas"
 import type { Entregador } from "@/types"
@@ -17,6 +18,7 @@ export async function POST(request: Request) {
       telefone: data.telefone,
       email: data.email || undefined,
       cpf: data.cpf,
+      codigoAcesso: data.codigoAcesso || generateAccessCode(),
       veiculo: data.veiculo,
       placaVeiculo: data.placaVeiculo || undefined,
       status: "offline",

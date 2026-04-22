@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { MapPin, Bike, AlertCircle } from 'lucide-react'
 export default function EntregadorLoginPage() {
   const router = useRouter()
+  const [codigoAcesso, setCodigoAcesso] = useState('')
   const [cpf, setCpf] = useState('')
   const [telefone, setTelefone] = useState('')
   const [error, setError] = useState('')
@@ -40,7 +41,7 @@ export default function EntregadorLoginPage() {
       const response = await fetch('/api/auth/deliverer-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cpf, telefone })
+        body: JSON.stringify({ codigoAcesso, cpf, telefone })
       })
 
       const data = await response.json()
@@ -88,6 +89,29 @@ export default function EntregadorLoginPage() {
             )}
             
             <div className="space-y-2">
+              <Label htmlFor="codigo">Código de Acesso</Label>
+              <Input
+                id="codigo"
+                placeholder="Código enviado pelo app master"
+                value={codigoAcesso}
+                onChange={(e) => setCodigoAcesso(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                maxLength={6}
+              />
+              <p className="text-xs text-muted-foreground">
+                Use este código para acesso rápido. Se preferir, entre com CPF e telefone abaixo.
+              </p>
+            </div>
+
+            <div className="relative py-1">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-muted-foreground">ou</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="cpf">CPF</Label>
               <Input
                 id="cpf"
@@ -95,7 +119,6 @@ export default function EntregadorLoginPage() {
                 value={cpf}
                 onChange={(e) => setCpf(formatCPF(e.target.value))}
                 maxLength={14}
-                required
               />
             </div>
 
@@ -107,7 +130,6 @@ export default function EntregadorLoginPage() {
                 value={telefone}
                 onChange={(e) => setTelefone(formatTelefone(e.target.value))}
                 maxLength={15}
-                required
               />
             </div>
 

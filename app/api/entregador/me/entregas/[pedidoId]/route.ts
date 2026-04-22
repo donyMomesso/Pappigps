@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionFromRequest } from "@/lib/auth/session"
-import { getRotas, updateRotas } from "@/lib/server/repositories"
+import { getRotas, updateEntregador, updateRotas } from "@/lib/server/repositories"
 import type { Rota } from "@/types"
 
 export async function PATCH(request: NextRequest, context: { params: Promise<{ pedidoId: string }> }) {
@@ -12,6 +12,8 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ p
   }
 
   let updatedRoute: Rota | null = null
+  let updatedEntregadorId: string | null = null
+  let updatedRouteStatus: Rota["status"] | null = null
 
   await updateRotas((rotas) =>
     rotas.map((rota) => {
@@ -29,14 +31,30 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ p
       const allDelivered = pedidos.every((pedido) => pedido.status === "entregue")
       updatedRoute = {
         ...rota,
+        entregador: rota.entregador
+          ? {
+              ...rota.entregador,
+              status: allDelivered ? "disponivel" : "em_rota",
+            }
+          : rota.entregador,
         pedidos,
-        status: allDelivered ? "finalizada" : rota.status,
+        status: allDelivered ? "finalizada" : "em_andamento",
         dataFim: allDelivered ? new Date() : rota.dataFim,
       }
+      updatedEntregadorId = rota.entregador?.id || null
+      updatedRouteStatus = allDelivered ? "finalizada" : "em_andamento"
 
       return updatedRoute
     })
   )
+
+  if (updatedEntregadorId) {
+    await updateEntregador(updatedEntregadorId, (current) => ({
+      ...current,
+      status: updatedRouteStatus === "finalizada" ? "disponivel" : "em_rota",
+      totalEntregas: (current.totalEntregas || 0) + 1,
+    }))
+  }
 
   return NextResponse.json({ success: true, route: updatedRoute })
 }

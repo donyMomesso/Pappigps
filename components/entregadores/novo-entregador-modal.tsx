@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { toast } from "@/hooks/use-toast"
 import {
   Select,
   SelectContent,
@@ -31,6 +32,7 @@ export function NovoEntregadorModal({ open, onOpenChange, onCreated }: NovoEntre
     nome: "",
     telefone: "",
     cpf: "",
+    codigoAcesso: "",
     email: "",
     veiculo: "moto",
     placaVeiculo: ""
@@ -51,10 +53,17 @@ export function NovoEntregadorModal({ open, onOpenChange, onCreated }: NovoEntre
         throw new Error("Falha ao cadastrar entregador")
       }
 
+      const created = await response.json()
+      toast({
+        title: "Entregador cadastrado",
+        description: `Código de acesso: ${created.codigoAcesso || "não informado"}`,
+      })
+
       setFormData({
         nome: "",
         telefone: "",
         cpf: "",
+        codigoAcesso: "",
         email: "",
         veiculo: "moto",
         placaVeiculo: ""
@@ -80,7 +89,7 @@ export function NovoEntregadorModal({ open, onOpenChange, onCreated }: NovoEntre
               <Input id="nome" placeholder="Nome do entregador" required value={formData.nome} onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))} />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="telefone">Telefone</Label>
                 <Input id="telefone" placeholder="(00) 00000-0000" required value={formData.telefone} onChange={(e) => setFormData(prev => ({ ...prev, telefone: e.target.value }))} />
@@ -89,6 +98,11 @@ export function NovoEntregadorModal({ open, onOpenChange, onCreated }: NovoEntre
                 <Label htmlFor="cpf">CPF</Label>
                 <Input id="cpf" placeholder="000.000.000-00" required value={formData.cpf} onChange={(e) => setFormData(prev => ({ ...prev, cpf: e.target.value }))} />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="codigoAcesso">Código de Acesso (opcional)</Label>
+              <Input id="codigoAcesso" placeholder="Se vazio, o sistema gera automaticamente" value={formData.codigoAcesso} onChange={(e) => setFormData(prev => ({ ...prev, codigoAcesso: e.target.value.replace(/\D/g, "").slice(0, 6) }))} />
             </div>
 
             <div className="space-y-2">

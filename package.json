@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "generate-test-orders": "tsx generate-test-orders.ts",
+    "test-delivery": "tsx test-delivery-system.ts",
+    "test-routing": "tsx test-routing.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
