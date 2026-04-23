@@ -50,22 +50,48 @@ export function RouteMap({ loja, pedidos, selectedPedidos }: RouteMapProps) {
         .bindPopup(`<div style="font-family: system-ui; min-width: 150px;"><strong>${loja.nome}</strong><br/><small>PONTO DE ORIGEM</small><br/><small>${loja.endereco.logradouro}, ${loja.endereco.numero}</small></div>`)
 
       // Add markers for pedidos
-      pedidos.forEach((pedido, index) => {
+      pedidos.forEach((pedido) => {
         if (pedido.endereco.latitude && pedido.endereco.longitude) {
           const isSelected = selectedPedidos.includes(pedido.id)
+          const markerLabel = String(pedido.numero || "").trim() || "?"
+          const markerWidth = Math.max(40, Math.min(88, 18 + markerLabel.length * 9))
 
-const markerHtml = `<div style="width: 32px; height: 32px; border-radius: 50%; background: ${isSelected ? "var(--success)" : "var(--border)"}; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">${index + 1}</div>`
+          const markerHtml = `
+            <div style="
+              min-width: ${markerWidth}px;
+              height: 34px;
+              padding: 0 10px;
+              border-radius: 999px;
+              background: ${isSelected ? "#16A34A" : "#111827"};
+              color: white;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-weight: 700;
+              font-size: 13px;
+              letter-spacing: 0.02em;
+              border: 3px solid white;
+              box-shadow: 0 6px 18px rgba(17,24,39,0.22);
+              white-space: nowrap;
+            ">${markerLabel}</div>
+          `
 
           const icon = L.divIcon({
             className: "custom-marker",
             html: markerHtml,
-            iconSize: [32, 32],
-            iconAnchor: [16, 16],
+            iconSize: [markerWidth, 34],
+            iconAnchor: [markerWidth / 2, 17],
           })
 
           L.marker([pedido.endereco.latitude, pedido.endereco.longitude], { icon })
             .addTo(map)
-            .bindPopup(`<div style="font-family: system-ui; min-width: 150px;"><strong>${pedido.numero}</strong><br/>${pedido.cliente.nome}<br/><small>${pedido.endereco.logradouro}, ${pedido.endereco.numero}</small></div>`)
+            .bindPopup(`
+              <div style="font-family: system-ui; min-width: 160px;">
+                <strong>Pedido ${pedido.numero}</strong><br/>
+                ${pedido.cliente.nome}<br/>
+                <small>${pedido.endereco.logradouro}, ${pedido.endereco.numero}</small>
+              </div>
+            `)
         }
       })
 
@@ -86,7 +112,9 @@ const markerHtml = `<div style="width: 32px; height: 32px; border-radius: 50%; b
 
         if (routeCoords.length > 1) {
           L.polyline(routeCoords, {
-              color: "var(--primary)",
+            color: "#F97316",
+            weight: 4,
+            opacity: 0.85,
           }).addTo(map)
 
           // Fit map to show entire route

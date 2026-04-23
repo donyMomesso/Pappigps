@@ -30,7 +30,6 @@ export function RouteSummary({
   onCreateRoute,
 }: RouteSummaryProps) {
   const totalValue = selectedPedidos.reduce((sum, p) => sum + p.valor, 0)
-  const totalVolumes = selectedPedidos.reduce((sum, p) => sum + (p.volumes || 1), 0)
   
   // Mock calculation - would be real distance calculation with routing API
   const estimatedDistance = selectedPedidos.length * 2.5
@@ -40,10 +39,10 @@ export function RouteSummary({
 
   return (
     <div className="bg-white border border-zinc-200 rounded-xl p-4">
-      <h3 className="font-semibold text-zinc-900 mb-4">Resumo da Rota</h3>
+      <h3 className="font-semibold text-zinc-900 mb-4">Fechar Rota</h3>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
+      <div className="mb-4 grid grid-cols-2 gap-3">
         <div className="bg-zinc-50 rounded-lg p-3">
           <div className="flex items-center gap-2 text-zinc-500 text-sm mb-1">
             <Package className="w-4 h-4" />
@@ -73,6 +72,24 @@ export function RouteSummary({
           <p className="text-xl font-bold text-zinc-900">{formatDuration(estimatedTime)}</p>
         </div>
       </div>
+
+      {selectedPedidos.length > 0 && (
+        <div className="mb-4">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
+            Sequência no mapa
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {selectedPedidos.map((pedido, index) => (
+              <span
+                key={pedido.id}
+                className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-700"
+              >
+                {index + 1}. #{pedido.numero}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Entregador Selection */}
       <div className="mb-4">
