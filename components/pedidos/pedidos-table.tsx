@@ -1,6 +1,6 @@
 "use client"
 
-import { MoreHorizontal, Eye, Edit, Trash2 } from "lucide-react"
+import { CheckCircle2, Eye, MoreHorizontal, PackageCheck, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -16,14 +16,32 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { cn, formatCurrency, formatDateTime, getStatusPedidoLabel, getStatusPedidoColor, getFormaPagamentoLabel } from "@/lib/utils"
+import {
+  cn,
+  formatCurrency,
+  formatDateTime,
+  getStatusPedidoLabel,
+  getStatusPedidoColor,
+  getFormaPagamentoLabel,
+  isCardapioWebPedido,
+} from "@/lib/utils"
 import type { Pedido } from "@/types"
 
 interface PedidosTableProps {
   pedidos: Pedido[]
+  actionPedidoId?: string | null
+  onViewDetails?: (pedido: Pedido) => void
+  onAcceptOrder?: (pedido: Pedido) => void
+  onReadyOrder?: (pedido: Pedido) => void
 }
 
-export function PedidosTable({ pedidos }: PedidosTableProps) {
+export function PedidosTable({
+  pedidos,
+  actionPedidoId,
+  onViewDetails,
+  onAcceptOrder,
+  onReadyOrder,
+}: PedidosTableProps) {
   if (pedidos.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-zinc-200 p-12 text-center">
@@ -54,7 +72,19 @@ export function PedidosTable({ pedidos }: PedidosTableProps) {
                 <TableCell className="font-medium">{pedido.numero}</TableCell>
                 <TableCell>
                   <div>
-                    <p className="font-medium text-zinc-900">{pedido.cliente.nome}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-zinc-900">{pedido.cliente.nome}</p>
+                      {isCardapioWebPedido(pedido) && (
+                        <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[11px] font-medium text-orange-700">
+                          Cardápio Web
+                        </span>
+                      )}
+                      {isCardapioWebPedido(pedido) && pedido.status === "cancelado" && (
+                        <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700">
+                          Cancelado pela plataforma
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-zinc-500">{pedido.cliente.telefone}</p>
                   </div>
                 </TableCell>
@@ -85,14 +115,28 @@ export function PedidosTable({ pedidos }: PedidosTableProps) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onViewDetails?.(pedido)}>
                         <Eye className="w-4 h-4 mr-2" />
                         Ver detalhes
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Edit className="w-4 h-4 mr-2" />
-                        Editar
-                      </DropdownMenuItem>
+                      {isCardapioWebPedido(pedido) && (
+                        <DropdownMenuItem
+                          onClick={() => onAcceptOrder?.(pedido)}
+                          disabled={actionPedidoId === pedido.id}
+                        >
+                          <CheckCircle2 className="w-4 h-4 mr-2" />
+                          Aceitar pedido
+                        </DropdownMenuItem>
+                      )}
+                      {isCardapioWebPedido(pedido) && (
+                        <DropdownMenuItem
+                          onClick={() => onReadyOrder?.(pedido)}
+                          disabled={actionPedidoId === pedido.id}
+                        >
+                          <PackageCheck className="w-4 h-4 mr-2" />
+                          Pedido pronto
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem className="text-red-600">
                         <Trash2 className="w-4 h-4 mr-2" />
                         Cancelar
@@ -112,6 +156,18 @@ export function PedidosTable({ pedidos }: PedidosTableProps) {
               <div className="min-w-0">
                 <p className="font-medium text-zinc-900">{pedido.numero}</p>
                 <p className="text-sm text-zinc-500">{formatDateTime(pedido.dataCriacao)}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {isCardapioWebPedido(pedido) && (
+                    <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[11px] font-medium text-orange-700">
+                      Cardápio Web
+                    </span>
+                  )}
+                  {isCardapioWebPedido(pedido) && pedido.status === "cancelado" && (
+                    <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700">
+                      Cancelado pela plataforma
+                    </span>
+                  )}
+                </div>
               </div>
               <span className={cn(
                 "shrink-0 rounded-full px-2.5 py-1 text-xs font-medium",
@@ -141,6 +197,32 @@ export function PedidosTable({ pedidos }: PedidosTableProps) {
                   <p className="font-medium text-zinc-900">{getFormaPagamentoLabel(pedido.formaPagamento)}</p>
                 </div>
               </div>
+              {isCardapioWebPedido(pedido) && (
+                <div className="grid grid-cols-1 gap-2 pt-2 sm:grid-cols-3">
+                  <Button variant="outline" size="sm" onClick={() => onViewDetails?.(pedido)}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    Detalhes
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onAcceptOrder?.(pedido)}
+                    disabled={actionPedidoId === pedido.id}
+                  >
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Aceitar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onReadyOrder?.(pedido)}
+                    disabled={actionPedidoId === pedido.id}
+                  >
+                    <PackageCheck className="mr-2 h-4 w-4" />
+                    Pronto
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         ))}

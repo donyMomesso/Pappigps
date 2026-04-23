@@ -11,6 +11,24 @@ const CONFIG_FILE = "configuracoes.json"
 const INTEGRATIONS_FILE = "integrations.json"
 const PEDIDOS_FILE = "pedidos.json"
 
+function isPedidoAtivo(status: Pedido["status"]) {
+  return status !== "entregue" && status !== "cancelado"
+}
+
+function resolveRouteStatus(rota: Rota): Rota["status"] {
+  const hasActivePedidos = rota.pedidos.some((pedido) => isPedidoAtivo(pedido.status))
+
+  if (!hasActivePedidos) {
+    return "finalizada"
+  }
+
+  if (rota.status === "em_andamento" || rota.pedidos.some((pedido) => pedido.status === "em_rota")) {
+    return "em_andamento"
+  }
+
+  return "planejada"
+}
+
 export async function getEntregadores() {
   return readOrCreateStore<Entregador[]>(ENTREGADORES_FILE, mockEntregadores)
 }
@@ -88,7 +106,7 @@ export async function savePedidosStore(pedidos: Pedido[]) {
 }
 
 export async function upsertPedido(pedido: Pedido) {
-  return updateStore<Pedido[]>(PEDIDOS_FILE, [], (current) => {
+  const pedidos = await updateStore<Pedido[]>(PEDIDOS_FILE, [], (current) => {
     const existingIndex = current.findIndex(
       (item) => item.id === pedido.id || item.numero === pedido.numero
     )
@@ -104,6 +122,71 @@ export async function upsertPedido(pedido: Pedido) {
 
     return [pedido, ...current]
   })
+
+  const affectedEntregadores = new Set<string>()
+
+  const rotasAtualizadas = await updateStore<Rota[]>(ROTAS_FILE, mockRotas, (current) =>
+    current.map((rota) => {
+      let changed = false
+
+      const pedidosDaRota = rota.pedidos.map((item) => {
+        const matchesPedido = item.id === pedido.id || item.numero === pedido.numero
+        if (!matchesPedido) return item
+
+        changed = true
+        return {
+          ...item,
+          ...pedido,
+          rotaId: item.rotaId || pedido.rotaId,
+          entregadorId: item.entregadorId || pedido.entregadorId,
+          ordemEntrega: item.ordemEntrega || pedido.ordemEntrega,
+          trackingToken: item.trackingToken || pedido.trackingToken,
+          taxaEntrega: pedido.taxaEntrega || item.taxaEntrega,
+        }
+      })
+
+      if (!changed) {
+        return rota
+      }
+
+      if (rota.entregador?.id) {
+        affectedEntregadores.add(rota.entregador.id)
+      }
+
+      const nextRoute = {
+        ...rota,
+        pedidos: pedidosDaRota,
+      }
+      const nextStatus = resolveRouteStatus(nextRoute)
+
+      return {
+        ...nextRoute,
+        status: nextStatus,
+        dataFim: nextStatus === "finalizada" ? rota.dataFim || new Date() : undefined,
+        entregador: rota.entregador
+          ? {
+              ...rota.entregador,
+              status: nextStatus === "em_andamento" ? "em_rota" : "disponivel",
+            }
+          : rota.entregador,
+      }
+    })
+  )
+
+  for (const entregadorId of affectedEntregadores) {
+    const rotasDoEntregador = rotasAtualizadas.filter((rota) => rota.entregador?.id === entregadorId)
+    const hasRouteInProgress = rotasDoEntregador.some((rota) =>
+      rota.status !== "finalizada" && rota.pedidos.some((item) => isPedidoAtivo(item.status))
+    )
+    const hasStartedRoute = rotasDoEntregador.some((rota) => rota.status === "em_andamento")
+
+    await updateEntregador(entregadorId, (current) => ({
+      ...current,
+      status: hasRouteInProgress && hasStartedRoute ? "em_rota" : "disponivel",
+    }))
+  }
+
+  return pedidos
 }
 
 export async function getPedidosSeed() {

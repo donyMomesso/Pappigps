@@ -8,6 +8,8 @@ import { PedidoFilters } from "@/components/pedidos/pedido-filters"
 import { NovoPedidoModal } from "@/components/pedidos/novo-pedido-modal"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
+import { toast } from "@/hooks/use-toast"
+import { isCardapioWebPedido } from "@/lib/utils"
 import type { Pedido, StatusPedido } from "@/types"
 
 const fetcher = async (url: string) => {
@@ -22,7 +24,8 @@ export default function PedidosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [statusFilter, setStatusFilter] = useState<StatusPedido | "todos">("todos")
   const [searchTerm, setSearchTerm] = useState("")
-  const { data, isLoading } = useSWR("/api/pedidos", fetcher)
+  const [actionPedidoId, setActionPedidoId] = useState<string | null>(null)
+  const { data, isLoading, mutate } = useSWR("/api/pedidos", fetcher)
   const pedidos: Pedido[] = data?.pedidos ?? []
 
   const filteredPedidos = pedidos.filter(pedido => {
@@ -32,6 +35,92 @@ export default function PedidosPage() {
       pedido.cliente.nome.toLowerCase().includes(searchTerm.toLowerCase())
     return matchesStatus && matchesSearch
   })
+
+  const handleViewDetails = async (pedido: Pedido) => {
+    setActionPedidoId(pedido.id)
+    try {
+      const response = await fetch(`/api/integrations/cardapioweb/orders/${pedido.id}`)
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Falha ao consultar detalhes do pedido")
+      }
+
+      const detalhe = result.pedido as Pedido
+      toast({
+        title: `Pedido ${detalhe.numero}`,
+        description: `${detalhe.cliente.nome} • ${isCardapioWebPedido(detalhe) ? "Cardápio Web" : "Pedido interno"} • ${detalhe.status} • ${new Intl.NumberFormat("pt-BR", {
+          style: "currency",
+          currency: "BRL",
+        }).format(detalhe.valor)}`,
+      })
+      await mutate()
+    } catch (error) {
+      toast({
+        title: "Erro ao consultar pedido",
+        description: error instanceof Error ? error.message : "Não foi possível consultar os detalhes.",
+        variant: "destructive",
+      })
+    } finally {
+      setActionPedidoId(null)
+    }
+  }
+
+  const handleAcceptOrder = async (pedido: Pedido) => {
+    setActionPedidoId(pedido.id)
+    try {
+      const response = await fetch(`/api/integrations/cardapioweb/orders/${pedido.id}/accept`, {
+        method: "POST",
+      })
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Falha ao aceitar pedido")
+      }
+
+      toast({
+        title: "Pedido aceito",
+        description: `O pedido ${pedido.numero} foi aceito no Cardápio Web.`,
+      })
+      await mutate()
+    } catch (error) {
+      toast({
+        title: "Erro ao aceitar pedido",
+        description: error instanceof Error ? error.message : "Não foi possível aceitar o pedido.",
+        variant: "destructive",
+      })
+    } finally {
+      setActionPedidoId(null)
+    }
+  }
+
+  const handleReadyOrder = async (pedido: Pedido) => {
+    setActionPedidoId(pedido.id)
+    try {
+      const response = await fetch(`/api/integrations/cardapioweb/orders/${pedido.id}/ready`, {
+        method: "POST",
+      })
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Falha ao marcar pedido como pronto")
+      }
+
+      toast({
+        title: "Pedido pronto",
+        description: `O pedido ${pedido.numero} foi marcado como pronto no Cardápio Web.`,
+      })
+      await mutate()
+    } catch (error) {
+      toast({
+        title: "Erro ao marcar pedido",
+        description: error instanceof Error ? error.message : "Não foi possível marcar o pedido como pronto.",
+        variant: "destructive",
+      })
+    } finally {
+      setActionPedidoId(null)
+    }
+  }
 
   return (
     <>
@@ -60,7 +149,13 @@ export default function PedidosPage() {
           onSearchChange={setSearchTerm}
         />
 
-        <PedidosTable pedidos={filteredPedidos} />
+        <PedidosTable
+          pedidos={filteredPedidos}
+          actionPedidoId={actionPedidoId}
+          onViewDetails={handleViewDetails}
+          onAcceptOrder={handleAcceptOrder}
+          onReadyOrder={handleReadyOrder}
+        />
 
         <NovoPedidoModal 
           open={isModalOpen} 

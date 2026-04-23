@@ -28,7 +28,9 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ p
           : pedido
       )
 
-      const allDelivered = pedidos.every((pedido) => pedido.status === "entregue")
+      const allDelivered = pedidos.every(
+        (pedido) => pedido.status === "entregue" || pedido.status === "cancelado"
+      )
       updatedRoute = {
         ...rota,
         entregador: rota.entregador

@@ -11,7 +11,7 @@ export async function PUT(request: Request) {
   try {
     const data = configuracoesLojaSchema.parse(await request.json())
     await saveConfiguracoes(data)
-    return NextResponse.json
+    return NextResponse.json(data)
   } catch {
     return NextResponse.json({ error: "Configurações inválidas" }, { status: 400 })
   }

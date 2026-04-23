@@ -1,5 +1,6 @@
 import { mockPedidos } from "@/mocks/data"
 import { getPedidosStore } from "@/lib/server/repositories"
+import { fetchCardapioWebPedidosByPolling } from "@/lib/integrations/cardapioweb"
 import type { Endereco, FormaPagamento, Pedido, StatusPedido } from "@/types"
 
 type UnknownRecord = Record<string, any>
@@ -129,33 +130,8 @@ function extractPedidosArray(payload: unknown): UnknownRecord[] {
 }
 
 export async function fetchPedidosExternos() {
-  const sourceUrl =
-    process.env.CARDAPIO_WEB_PEDIDOS_URL ||
-    process.env.CARDAPIO_WEB_URL ||
-    "https://acesso.pickngo.online/api/cardapioWeb"
-
-  const token = process.env.CARDAPIO_WEB_TOKEN
-  const response = await fetch(sourceUrl, {
-    cache: "no-store",
-    headers: {
-      Accept: "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    }
-  })
-
-  if (!response.ok) {
-    throw new Error(`Falha ao consultar origem externa: ${response.status}`)
-  }
-
-  const text = await response.text()
-  if (!text.trim()) {
-    return []
-  }
-
-  const payload = JSON.parse(text)
-  const pedidosRaw = extractPedidosArray(payload)
-
-  return pedidosRaw.map((pedido, index) => normalizePedido(pedido, index))
+  const pedidos = await fetchCardapioWebPedidosByPolling()
+  return pedidos
 }
 
 export async function getPedidos() {

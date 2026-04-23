@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import type { StatusPedido, StatusEntregador, TipoVeiculo, FormaPagamento } from "@/types"
+import type { Pedido, StatusPedido, StatusEntregador, TipoVeiculo, FormaPagamento } from "@/types"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -115,4 +115,8 @@ export function formatDuration(minutes: number): string {
   const hours = Math.floor(minutes / 60)
   const mins = minutes % 60
   return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`
+}
+
+export function isCardapioWebPedido(pedido: Pick<Pedido, "id">): boolean {
+  return pedido.id.startsWith("cardapioweb_")
 }

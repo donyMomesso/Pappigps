@@ -6,9 +6,9 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, MapPin, Clock, Package, User, Phone, CheckCircle, Circle, Copy } from "lucide-react"
+import { ArrowLeft, MapPin, Clock, Package, Phone, CheckCircle, Copy, AlertTriangle } from "lucide-react"
 import type { Configuracoes, Loja, Rota } from "@/types"
-import { cn, formatCurrency, formatDistance, formatDuration, formatDateTime, getTipoVeiculoLabel, getStatusPedidoLabel, getStatusPedidoColor } from "@/lib/utils"
+import { cn, formatCurrency, formatDistance, formatDuration, formatDateTime, getTipoVeiculoLabel, getStatusPedidoLabel, getStatusPedidoColor, isCardapioWebPedido } from "@/lib/utils"
 
 const RouteMap = dynamic(
   () => import("@/components/roteirizacao/route-map").then(mod => mod.RouteMap),
@@ -86,6 +86,7 @@ export default function RotaDetalhePage({ params }: { params: Promise<{ id: stri
 
   const totalValue = rota.pedidos.reduce((sum, p) => sum + p.valor, 0)
   const deliveredCount = rota.pedidos.filter(p => p.status === "entregue").length
+  const canceledCount = rota.pedidos.filter(p => p.status === "cancelado").length
 
   const copyTrackingLink = async (token?: string) => {
     if (!token || typeof window === "undefined") return
@@ -155,6 +156,13 @@ export default function RotaDetalhePage({ params }: { params: Promise<{ id: stri
                   <div className="text-zinc-500 text-sm mb-1">Valor Total</div>
                   <p className="text-xl font-bold text-emerald-600">{formatCurrency(totalValue)}</p>
                 </div>
+                <div className="bg-zinc-50 rounded-lg p-3 col-span-2">
+                  <div className="flex items-center gap-2 text-zinc-500 text-sm mb-1">
+                    <AlertTriangle className="w-4 h-4" />
+                    Cancelamentos
+                  </div>
+                  <p className="text-xl font-bold text-red-600">{canceledCount}</p>
+                </div>
               </div>
             </div>
 
@@ -193,15 +201,21 @@ export default function RotaDetalhePage({ params }: { params: Promise<{ id: stri
                     key={pedido.id} 
                     className={cn(
                       "flex items-start gap-3 p-3 rounded-lg border",
-                      pedido.status === "entregue" ? "bg-emerald-50 border-emerald-200" : "bg-white border-zinc-200"
+                      pedido.status === "entregue"
+                        ? "bg-emerald-50 border-emerald-200"
+                        : pedido.status === "cancelado"
+                          ? "bg-red-50 border-red-200"
+                          : "bg-white border-zinc-200"
                     )}
                   >
                     <div className="flex flex-col items-center">
                       <div className={cn(
                         "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                        pedido.status === "entregue" 
-                          ? "bg-emerald-600 text-white" 
-                          : "bg-zinc-200 text-zinc-600"
+                        pedido.status === "entregue"
+                          ? "bg-emerald-600 text-white"
+                          : pedido.status === "cancelado"
+                            ? "bg-red-600 text-white"
+                            : "bg-zinc-200 text-zinc-600"
                       )}>
                         {pedido.status === "entregue" ? <CheckCircle className="w-4 h-4" /> : index + 1}
                       </div>
@@ -218,6 +232,18 @@ export default function RotaDetalhePage({ params }: { params: Promise<{ id: stri
                         )}>
                           {getStatusPedidoLabel(pedido.status)}
                         </span>
+                      </div>
+                      <div className="mb-2 flex flex-wrap gap-2">
+                        {isCardapioWebPedido(pedido) && (
+                          <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[11px] font-medium text-orange-700">
+                            Cardápio Web
+                          </span>
+                        )}
+                        {isCardapioWebPedido(pedido) && pedido.status === "cancelado" && (
+                          <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700">
+                            Saiu da rota por cancelamento da plataforma
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-zinc-900">{pedido.cliente.nome}</p>
                       <p className="text-sm text-zinc-500 truncate">

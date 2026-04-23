@@ -278,6 +278,36 @@ function IntegrationsTab() {
     }
   }
 
+  const handleSyncCardapioWeb = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/integrations/cardapioweb/sync', {
+        method: 'POST',
+      })
+
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Falha ao sincronizar pedidos')
+      }
+
+      toast({
+        title: "Sincronização concluída",
+        description: result.message,
+      })
+      await fetchIntegrations()
+    } catch (error) {
+      console.error('Erro ao sincronizar Cardápio Web:', error)
+      toast({
+        title: "Erro na sincronização",
+        description: error instanceof Error ? error.message : "Não foi possível sincronizar agora.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -546,6 +576,17 @@ function IntegrationsTab() {
                     <Label>Ativo</Label>
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row">
+                    {integration.id === "cardapioweb_001" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => void handleSyncCardapioWeb()}
+                        disabled={loading}
+                      >
+                        <Activity className="mr-2 h-4 w-4" />
+                        Sincronizar pedidos
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
